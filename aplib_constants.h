@@ -22,7 +22,7 @@ extern AP AP2_3;
 extern AP AP1_7;
 extern AP AP2_7;
 extern AP AP22_7;
-extern AP PI;
+extern AP AP_PI;
 
 
 typedef struct Planck   {
