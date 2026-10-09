@@ -12,6 +12,7 @@ IEEE754 mode, and arbitrary-Precision emulation of IEEE754 floats and doubles." 
 
 #include "./lean_string.h"
 #include "./aplib.h"
+#include "./aplib_constants.h"
 
 #define APNUM AP
 #define ULL unsigned long long int
@@ -61,6 +62,24 @@ Other operations have a simple method for establishing the sign without dynamic 
 */
 static signed char* VALUES = __VALUES__+(19*2);
 
+
+static unsigned char __iVALUES__[ (89+19)*2 + 2 ] = {
+
+	1, 9, 1, 8, 1, 7, 1, 6, 1, 5, 1, 4, 1, 3, 1, 2, 1, 1, 1, 0,
+	0, 9, 0, 8, 0, 7, 0, 6, 0, 5, 0, 4, 0, 3, 0, 2, 0, 1,
+	0, 0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8, 0, 9,
+	1, 0, 1, 1, 1, 2, 1, 3, 1, 4, 1, 5, 1, 6, 1, 7, 1, 8, 1, 9,
+	2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 2, 5, 2, 6, 2, 7, 2, 8, 2, 9,
+	3, 0, 3, 1, 3, 2, 3, 3, 3, 4, 3, 5, 3, 6, 3, 7, 3, 8, 3, 9,
+	4, 0, 4, 1, 4, 2, 4, 3, 4, 4, 4, 5, 4, 6, 4, 7, 4, 8, 4, 9,
+	5, 0, 5, 1, 5, 2, 5, 3, 5, 4, 5, 5, 5, 6, 5, 7, 5, 8, 5, 9,
+	6, 0, 6, 1, 6, 2, 6, 3, 6, 4, 6, 5, 6, 6, 6, 7, 6, 8, 6, 9,
+	7, 0, 7, 1, 7, 2, 7, 3, 7, 4, 7, 5, 7, 6, 7, 7, 7, 8, 7, 9,
+	8, 0, 8, 1, 8, 2, 8, 3, 8, 4, 8, 5, 8, 6, 8, 7, 8, 8, 8, 9
+};
+
+static unsigned char* iVALUES = __iVALUES__+(19*2);
+
 /**
 Static descriptors for indexing the available public Operators.
 The associated function "get_opcode" takes a string for the Op name (e.g. "add" for A+B),
@@ -70,6 +89,7 @@ and returns the descriptor for passing to the main APLIB switch-case block.
 #define FNC_ENTRY_SIG AP A, AP B, AP C, Flags extra
 #define apfnc_t (AP)(*opfnc)( AP A, AP B, AP C, Flags extra )
 #define Result result_t
+#define swap_sign(A) if( A->sign=='-' ) A->sign = '+'; else A->sign = '-';
 
 static inline AP MAX( AP A, AP B );
 
@@ -106,6 +126,22 @@ aplib_operator getaplib_operator( int x )  {
     return operator;
 }
 
+
+/*
+
+PROTOCOL:
+
+INIT::
+aplib->BlankAP(); // fnc version returns allocated AP struct, with null part ptrs.
+
+CALL::
+
+CLEANUP::
+
+void CLeanUpResult( AP );
+
+
+*/
 static void CleanUpResult( AP A )  {
     
     if( A==(AP)0 )  {
@@ -131,27 +167,6 @@ static void CleanUpResult( AP A )  {
         A->desc = strdup( "AP number." );
     }
 }
-
-AP e; // Euler's Constant.
-AP GR; // The "Golden Ratio".
-AP FGC; // The "Fine-Grain Constant." ( ~ 1/137 )
-AP AP0;
-AP AP1;
-AP AP2;
-AP AP3;
-AP AP10;
-AP AP16;
-AP AP1_2;
-AP AP1_3;
-AP AP1_4;
-AP AP1_5;
-AP AP3_4;
-AP AP4_5;
-AP AP2_3;
-AP AP1_7;
-AP AP2_7;
-AP AP22_7;
-AP AP_PI;
 
 /* FNC DECL'S
 */
@@ -207,7 +222,7 @@ static char* PrettyPrintAP( AP A )   {
 	lean_strcat( _, A->wholepart );
 	lean_strcat( _, period_f );
 	lean_strcat( _, "." );
-	lean_strcat( fp_f );
+	lean_strcat( _, fp_f );
 	lean_strcat( _, A->fractpart );
 	lean_strcat( _, reset_str );
 
@@ -233,10 +248,15 @@ static char* PrettyPrintAP( AP A )    {
 }
 #endif
 
-static const char* PrintAP( AP A )  {
+static const char* FormatAP( AP A )  {
 
-	char* _ = (char*) malloc( lean_strlen(A->wholepart) + 1 + lean_strlen(A->fractpart) + 1 );
+	if( A==(AP)0 )
+		return A;
+		
+	char* _ = (char*) malloc( 1 + lean_strlen(A->wholepart) + 1 + lean_strlen(A->fractpart) + 1 );
 
+	*(_++) = A->sign;
+	
 	while( *A->wholepart)
 		*(_++) = *(A->wholepart++);
 
@@ -251,15 +271,6 @@ static const char* PrintAP( AP A )  {
 	return _;
 }
 
-static void swapsign( AP A )    {
-
-    if( A->sign == '-' )
-        A->sign = '+';
-    else
-        A->sign = '-';
-
-    return;
-}
 
 static char* RandAPNumString( uint64_t maxlen );
 static char* RandAPNumString( uint64_t maxlen )	{
@@ -700,13 +711,10 @@ static void ADD( AP A, AP B, AP C, Flags extra ) {
 	a = '0';
 	b = '0';
 	r = '0';
-	
-	
+
     while( 0 )  {
       
    ADDloop:    
-
-
 
         if( PART==1 )   {
             
@@ -1216,62 +1224,65 @@ if( A->fractpart==(char*)0 ) A->fractpart = (char*)calloc( lenfp+1, sizeof(char)
 
 static void MUL( AP A, AP B, AP C, Flags extra ) {
 
-	register char* Awp = A->wholepart;
-	register char* Bwp = B->wholepart;
-	register char* Cwp;
+	short int PART = 1;
+	
+	register char* Apart = A->fractpart;
+	register char* Bpart = B->fractpart;
+	register char* Cpart;
 
-	int64_t lenA = lean_strlen( Awp );
-	int64_t lenB = lean_strlen( Bwp );
-	int64_t maxlenAB = max( lenA, lenB );
-	register int64_t lenC = lenA+lenB;
+	uint64_t lenA = lean_strlen( A->fractpart );
+	uint64_t lenB = lean_strlen( B->fractpart );
+	uint64_t lenC = lenA + lenC;
 
-    if( C->wholepart == (char*)0 )
-        C->wholepart = (char*)malloc( lenC+1 );
+	if( C==(AP)0 )	{
 
-    Cwp = C->wholepart;
-    Cwp[ lenC ] = '\0';
-
-	signed char carry = 0;
-	signed char a = 0;
-	signed char b = 0;
-	signed char c = 0;
-    signed char ires_carry = 0;
+		
+	}
+	unsigned char carry = 0;
+	unsigned char a = 0;
+	unsigned char b = 0;
+	unsigned char c = 0;
+    unsigned char ires_carry = 0;
     
 	register signed long long int x = lenA-1;
-	register signed long long int y = lenB-1;
+	register signed long long int y = lenB;
 	register signed long long int z = 0;
-    signed long long int ires_msd_column = (lenC-lenB); // num cols in row 0 is 3, ||B|| 
+    
     
 	register signed long long cz = 0;
 	signed long long tz = 0;
 
 	z = cz = tz = lenA+lenB-1;
 
-	// Loop
-	while( x>=0 ) {
 
-        a = Awp[x] & 15;
-		b = Bwp[y] & 15;
-		c = (a * b) + carry + Cwp[ cz ];
+	// FOR_EACH digit in A, starting with lsd of fp, A[y] * B[all columns, 1 at a time, both fp and wp, then that result (2 buffers, cwp anf cfp), is preserved for accumulation.
+	
+	b = Bpart[y] & 15;
+	
+	while( x )  {
 		
-		Cwp[cz] = c % 10;
-		carry = (signed char)(c - (c % 10))/10;
-
+   	MULloop:
+	
+		--x;
+		a = Apart[x] & 15;
+    	
+		c = (a * b) + carry + Cpart[ cz ];
+		carry = iVALUES[ (c*2) ];
+		Cpart[cz] = iVALUES[ (c*2)+1 ];
         
 		if( carry > 8 ) fprintf( stderr, "Carry digit > 8 in MUL: %d\n", carry );
 
 		if( y==0 )	{
 
-            Cwp[ cz-1 ] += carry;
+            Cpart[ cz-1 ] += carry;
 
 			/*
-			Each loop of A (next digit in B), we no longer accum. the same C offset,
+			Each loop of A (next digit in B), we no longer accum the same C offset,
 			it's now shunted to the left 1.
 			*/
-
+			
 			--x;
 			y = lenB-1;
-			
 			--z;
 			cz = z;
 			carry = 0;
@@ -1282,22 +1293,21 @@ static void MUL( AP A, AP B, AP C, Flags extra ) {
 			--cz;
 		}
 	}
-	
+
     while( lenC ) {
         
-        Cwp[ tz-- ] |= 48;
+        Cpart[ tz-- ] |= 48;
         --lenC;
     }
 
-    C->sign = (A->sign != B->sign) ? '-' : '+';
+	if( A->sign != B->sign )
+		C->sign = '-';
+	else
+		C->Sign = '+';
     
 	return;
 }
 
-/*
-char* Afp = A->fractpart
-char* Bfp = B->fractpart
-*/
 
 static Flags spare_extra;
 
@@ -1485,7 +1495,7 @@ bxn_loop:
 	Cwp = C->wholepart;
     
 	*extra = *extra | (count&255);
-	strcpy( Cwp, APR1->wholepart );
+	lean_strcpy( Cwp, APR1->wholepart );
 	aplib->FreeAP( APR1 );
 	aplib->FreeAP( APR2 );
     
@@ -1760,6 +1770,20 @@ static void divby2( AP A, AP C, Flags extra ) {
 
 	DIV( A, AP2, C, extra );
 }
+
+
+static void swapsign( AP A )    {
+
+    if( A->sign == '-' )
+        A->sign = '+';
+    else
+        A->sign = '-';
+
+    return;
+}
+
+
+
 static unsigned char aplib_initialised = 0;
 void InitAPLIB()    {
 
