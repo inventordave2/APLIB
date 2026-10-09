@@ -14,11 +14,20 @@
 
 int main( int argc, char** argv )   {
 
-    char* opt = argv[1];
-    char* operand1 = argv[2];
-    char* operand2 = argv[3];
-    
-    if( lean_strcmp( opt, "ieee_754" ) )    {
+    char* opt = (char*)0;
+    char* operand1 = (char*)0;
+    char* operand2 = (char*)0;
+
+	if( argc > 1 )
+    opt = argv[1];
+		
+	if( argc > 2 )
+    operand1 = argv[2];
+
+	if( argc > 3 )
+    operand2 = argv[3];
+	
+    if( (opt != (char*)0) && lean_strcmp( opt, "ieee_754" ) )    {
         
         double f;
         if( argc>2 )
@@ -56,7 +65,7 @@ int main( int argc, char** argv )   {
     }
     
     
-    if( lean_strcmp( argv[1], "calc_pi" ) )    {
+    if( lean_strcmp( opt, "calc_pi" ) )    {
         
 
         double r = generate_half_pi();
@@ -66,7 +75,7 @@ int main( int argc, char** argv )   {
         exit(0);
     }
     
-    if( lean_strcmp( argv[1], "bitfield_add" ) )    {
+    if( lean_strcmp( opt, "bitfield_add" ) )    {
     
         if( argc > 2 )  {
             
@@ -100,7 +109,7 @@ int main( int argc, char** argv )   {
         
     }
 
-    if( lean_strcmp( argv[1], "sine" ) )    { 
+    if( lean_strcmp( opt, "sine" ) )    { 
         
         double a = 1.0;
         
@@ -111,7 +120,7 @@ int main( int argc, char** argv )   {
         
         exit(0);
     }
-    if( lean_strcmp( argv[1], "newtons_root") )  {
+    if( lean_strcmp( opt, "newtons_root") )  {
         
         char* input = "100.0";
         
@@ -139,14 +148,16 @@ int main( int argc, char** argv )   {
         printf( "stdlib version took: %f\nmy custom method took: %f\n", stdlib_method, custom_method );
         exit(0);
     }
-    if( lean_strcmp( argv[1], "stringify_float" ) )    {
+    if( lean_strcmp( opt, "stringify_float" ) )    {
         
         // char* IEEE_readDouble( double f )
-        char* input = "65535.0";
+        char* input;
         
-        if( argc>2 )
-            input = argv[2];
-            
+        if( operand1 )
+            input = operand1;
+        else
+			 input = "65535.0";
+	
         float x = (float)atof( input );
 
         char* result = IEEE_readFloat( x );
@@ -163,7 +174,7 @@ int main( int argc, char** argv )   {
         
         return 0;
     }
-    if( lean_strcmp(argv[1], "native_log") )    {
+    if( lean_strcmp(opt, "native_log") )    {
         
         char* input = "5.0";
         if( argc>2 )
@@ -193,7 +204,7 @@ int main( int argc, char** argv )   {
 	}
 	else	{
 
-		arg1 = strdup( argv[1] );
+		arg1 = strdup( opt );
 		arg2 = strdup( argv[2] );
 		arg3 = strdup( argv[3] );
 	}
@@ -221,49 +232,6 @@ int main( int argc, char** argv )   {
  
 	// EMIT OPERATION RESULT.
 	if( emit_result )	{
-		
-		/*
-		char* A_WP;
-		char* A_FP;
-		char* B_WP;
-		char* B_FP;
-
-        char* Z	= "0";	
-		char* C_WP;
-		char* C_FP; 
-		
-		
-		if( cmpdstr(A->wholepart, "0")>0 )
-		    A_WP = A->wholepart;
-		else
-		    A_WP = Z;
-
-        if( cmpdstr(A->fractpart, "0")>0 )
-            A_FP = A->fractpart;
-        else
-            A_FP = Z;
-            
-        if( cmpdstr(B->wholepart, "0")>0 )
-            B_WP = B->wholepart;
-        else
-            B_WP = Z;
-            
-        if( cmpdstr(B->fractpart, "0")>0 )
-            B_FP = B->wholepart;
-        else
-            B_FP = Z;
-        
-		if( cmpdstr(C->wholepart, "0")>0 )
-		    C_WP = C->wholepart;
-		else
-		    C_WP = Z;
-		    
-		if( cmpdstr(C->fractpart, "0")>0 )
-		    C_FP = C->fractpart;
-		else
-		    C_FP = Z;
-		
-        */
         
 		printf( "Result of '%s.%s' '%s' '%s.%s' = '%s.%s'.\n", \
 		A->wholepart, A->fractpart, arg1, B->wholepart, B->fractpart, C->wholepart, C->fractpart );
@@ -280,6 +248,7 @@ int main( int argc, char** argv )   {
 	free( arg1 );
 	free( arg2 );
 	free( arg3 );
+	free( extra );
 
 	// EXIT.
 	return 0;
