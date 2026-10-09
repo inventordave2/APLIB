@@ -71,6 +71,8 @@ and returns the descriptor for passing to the main APLIB switch-case block.
 #define apfnc_t (AP)(*opfnc)( AP A, AP B, AP C, Flags extra )
 #define Result result_t
 
+static inline AP MAX( AP A, AP B );
+
 static const char* PI_math_h = "3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593344612847564823378678316527120190914564856692346034861045432664821339360726024914127372458700660631558817488152092096282925409171536436789259036001133053054882046652138414695194151160943305727036575959195309218611738193261179310511854807446237996274956735188575272489122793818301194912";
 
 static const char* Lp = "0.000000000000000000000000000000000001616255"; //( units => metres )
@@ -149,7 +151,7 @@ AP AP2_3;
 AP AP1_7;
 AP AP2_7;
 AP AP22_7;
-AP PI;
+AP AP_PI;
 
 /* FNC DECL'S
 */
@@ -249,8 +251,17 @@ static const char* PrintAP( AP A )  {
 	return _;
 }
 
-static char* RandAPNumString( uint64_t maxlen );
+static void swapsign( AP A )    {
 
+    if( A->sign == '-' )
+        A->sign = '+';
+    else
+        A->sign = '-';
+
+    return;
+}
+
+static char* RandAPNumString( uint64_t maxlen );
 static char* RandAPNumString( uint64_t maxlen )	{
 
 	srand(time(NULL));
@@ -267,6 +278,10 @@ static char* RandAPNumString( uint64_t maxlen )	{
 	return _;
 }
 
+
+static void swapsign( AP A );
+
+
 /* APLIB (Arbitrary-Precision) Operator function signatures. These operators are complete for arbitrary length Integers (no fractpart).
 */
 static void ADD( AP A, AP B, AP C, Flags extra );
@@ -279,6 +294,50 @@ static void BXN( AP A, AP B, AP C, Flags extra );
 
 static void Root( AP A, AP B, AP C, Flags extra );
 
+static void Root( AP A, AP B, AP C, Flags extra )  {
+
+    AP x = (AP)malloc( sizeof(struct ap) );
+    AP y = (AP)malloc( sizeof(struct ap) );
+    AP z = (AP)malloc( sizeof(struct ap) );
+    
+    aplib->divide( A, AP2, x, (Flags)0 );
+    AP prev_x = aplib->CopyAP( AP0, (Flags)0 );
+    AP diff = aplib->CopyAP( AP0, (Flags)0 );
+   
+    
+    int max_iterations = 20;
+    AP tolerance = aplib->QuickAP( "0.000000001" );
+    
+    while( max_iterations-- )   {
+        
+        aplib->FreeAP( prev_x );
+        prev_x = x;
+        
+        
+        aplib->divide( A, x, y, (Flags)0 );
+        aplib->add( x, y, y, (Flags)0 );
+        aplib->mul( AP1_2, y, x, (Flags) 0 );
+        
+        aplib->sub( x, prev_x, diff, (Flags) 0 );
+        
+        if( aplib->cmpap( diff, AP0, z, (Flags)0 ) < 0 )    {
+            
+            diff->sign = '+';
+        }
+        
+        if( aplib->cmpap( diff, tolerance, z, (Flags)0 ) < 0 )
+            break;
+    }
+    
+    
+    *C = *x;
+    
+    aplib->FreeAP( x );
+    aplib->FreeAP( y );
+    aplib->FreeAP( z );
+    
+    return;
+}
 static void FreeAP( AP A )  {
 
 	if( A == (AP)0 )
@@ -287,11 +346,15 @@ static void FreeAP( AP A )  {
 	if( A->wholepart != (char*)0 )  {
 
 		free( A->wholepart );
+		A->wholepart = (char*)0;
 	}
 	
 	if( A->fractpart != (char*)0 )  {
 	    
 		free( A->fractpart );
+		A->fractpart = (char*)0;
+		
+		
 	}
 
     free( A );
@@ -347,7 +410,6 @@ static int cmpap( AP A, AP B, AP C, Flags extra )   {
 	return v;
 }
 
-static inline AP MAX( AP A, AP B );
 static inline AP MAX( AP A, AP B )    {
 
     uint64_t x = 0;
@@ -391,7 +453,7 @@ static uint64_t max( uint64_t a, uint64_t b ) {
     
     return b;
 }
-static void Root( AP A, AP B, AP C, Flags extra )	{
+static void _Root_( AP A, AP B, AP C, Flags extra )	{
 
 	AP x0 = BlankAP();
 	
@@ -447,8 +509,8 @@ static void Root( AP A, AP B, AP C, Flags extra )	{
 */
 static char* shift_ptr_past_leading_zeroes( char* _ )	{
 
-	if( _==NULL )
-		return NULL;
+	if( _==(char*)0 )
+		return _;
 
 	if( *_=='\0' )
 		return _;
@@ -506,25 +568,39 @@ typedef struct AB_prescan   {
 
 static struct AB_prescan lean_strlen_and_max( AP A, AP B ) ;
 
-
 #define INIT_ABPRESCAN(X) X.max = (AP)0; X.strlen_b.wp = 0; X.strlen_b.fp = 0; X.strlen_a.wp = 0; X.strlen_a.fp = 0;
 static struct AB_prescan lean_strlen_and_max( AP A, AP B )    {
     
     struct AB_prescan ab;
     INIT_ABPRESCAN(ab);
+    //shift_left_leading_zeroes( A );
+    //shift_left_leading_zeroes( B );
+    char* Awp = A->wholepart;
+    char* Bwp = B->wholepart;
+    
+    while( *Awp=='0' )
+        ++Awp;
+    if( !*Awp )
+        --Awp;
+        
+    while( *Bwp=='0' )
+        ++Bwp;
+    if( !*Bwp )
+        --Bwp;
+        
     ab.max = A;
     
     uint64_t x = 0;
     char z = (char)0;
 
-    while( (z = A->wholepart[ x ]) )  {
+    while( (z = Awp[ x ]) )  {
         
-        if( z > B->wholepart[ x ] ) {
+        if( z > Bwp[ x ] ) {
         
-            if( B->wholepart[ x ]=='\0' )
+            if( Bwp[ x ]=='\0' )
                 ab.strlen_b.wp = x;
         }    
-        if( z < B->wholepart[ x ] ) {
+        if( z < Bwp[ x ] ) {
             
             ab.max = B;
         }
@@ -536,7 +612,7 @@ static struct AB_prescan lean_strlen_and_max( AP A, AP B )    {
     
     if( ab.strlen_b.wp == 0 )   {
         
-        while( B->wholepart[ x ] )
+        while( Bwp[ x ] )
             ++x;
 
         ab.strlen_b.wp = x;
@@ -544,32 +620,50 @@ static struct AB_prescan lean_strlen_and_max( AP A, AP B )    {
     
     
     x = 0;
+    int p = '\0';
     
-    while( (z = A->fractpart[ x ]) )    {
+    char* Afp = A->fractpart;
+    char* Bfp = B->fractpart;
+    
+    
+    if( Afp != (char*)0 )    {
         
-        if( z > B->fractpart[ x ] ) {
 
-            if( B->fractpart[ x ]=='\0' )
-                ab.strlen_b.fp = x;
-        }
-        
-        if( z < B->fractpart[ x ] ) {
+        while( (z = Afp[ x ]) )    {
             
-            ab.max = B;
+            if( Bfp != (char*)0 )
+                p = Bfp[ x ];
+
+                
+            if( z > p ) {
+    
+                if( p=='\0' )
+                    ab.strlen_b.fp = x;
+            }
+            
+            if( z < p ) {
+                
+                ab.max = B;
+            }
+            
+            ++x;
         }
         
-        ++x;
-    }
-    
-    ab.strlen_a.fp = x;
-    
-    if( ab.strlen_b.fp==0 ) {
+        ab.strlen_a.fp = x;
         
-        while( B->fractpart[ x ] )
-            ++x;
+        if( ab.strlen_b.fp==0 ) {
+            
+            if( Bfp != (char*)0 )
+                p = Bfp[ x ];
+            
+            while( p )
+                ++x;
+        
+            ab.strlen_b.fp = x;    
+        }
     
-        ab.strlen_b.fp = x;    
     }
+    
     
     return ab;
 }
@@ -577,124 +671,198 @@ static struct AB_prescan lean_strlen_and_max( AP A, AP B )    {
 
 static void ADD( AP A, AP B, AP C, Flags extra ) {
 
+    register char* Apart;
+    register char* Bpart;
+    register char* Cpart;
+    char** D;
 
-	register char* Awp = A->wholepart;
-	register char* Bwp = B->wholepart;
-	register char* Cwp;
+    unsigned char a;
+    unsigned char b;
+    unsigned char carry;
+    unsigned char r;
 
-    struct AB_prescan ab = lean_strlen_and_max( A, B );
+    unsigned char a0;
+    unsigned char b0;
+    	
+    uint8_t PART = 1;
+    
+	uint64_t lenA;
+	int64_t x;
+	
+	uint64_t lenB;
+	int64_t y;
+	
+	int64_t z;
 
-	uint64_t lenA = ab.strlen_a.wp;
-	int64_t x = lenA-1;
-
-	uint64_t lenB = ab.strlen_b.wp;
-	int64_t y = lenB-1;
-
-	uint64_t largest = 0;
-	uint64_t longest = 0;
-
-	if( lenB>lenA )
-		longest = largest = lenB;
-	else if( lenA>lenB )
-		longest = largest = lenA;
-	else
-	    largest = lenA;
-
-
-	uint64_t lenC = largest+1;
-	if( C->wholepart == (char*)0 )  {
-
-		C->wholepart = (char*)malloc( largest + 1 );
-	}
-
-	C->wholepart[ largest ] = '\0';
-	C->wholepart[ largest-1 ] = '0';
-
-	Cwp = C->wholepart;
-
-	uint64_t z = lenC-1;
-
-	unsigned char a = '0';
-	unsigned char b = '0';
-
-	unsigned char a0 = 0;
-	unsigned char b0 = 0;
-
-	unsigned char carry = '0';
-	unsigned char r = '0';
+   	a0 = 0;
+    b0 = 0;
+ 
+	a = '0';
+	b = '0';
+	r = '0';
+	
+	
+    while( 0 )  {
+      
+   ADDloop:    
 
 
-    //(check at each digit until the condition of A != B is resolved )
-ADDloop:
 
-	// if fractpart, may need implicit trailing zeroes, so need to calc length of fractpart
-	// for both A and B.
-	if( a0 )
-		a = '0';
-	else
-		a = Awp[x];
-
-	if( b0 )
-		b = '0';
-	else
-		b = Bwp[y];
-
-
-	r = a + b + carry;
-	r = r - (48 * 3);
-
-	carry = VALUES[ r*2 ];
-	Cwp[z] =  VALUES[ (r*2)+1 ];
-
-	z--;
-	x--;
-	y--;
-
-	if( x<0 )
-		a0 = 1;
-
-	if( y<0 )
-		b0 = 1;
-
-
-	if( a0 && b0 )	{
-
-		Cwp[z] = carry;
-	}
-	else	{
-
-		goto ADDloop;
-	}
-
-    C->sign = '+';
-
-    if( longest != 0 )    {
-        
-        if( largest==lenA ) {
-
-            if( A->sign=='-' )
-                C->sign = '-';
-        }
-        else if( largest==lenB )  { 
-         
-            if( B->sign=='-' )
-                C->sign = '-';
-        }
+        if( PART==1 )   {
             
+            if( x < y ) {
+    
+                a0 = 1;
+                ++x;
+            }
+            else if( y < x )    {
+
+                b0 = 1;
+                ++y;
+            }
+            
+        }
+
+        
+    	if( a0 )
+    		a = '0';
+    	else
+    		a = Apart[x];
+    
+    	if( b0 )
+    		b = '0';
+    	else
+    		b = Bpart[y];
+    
+    	r = a + b + carry;
+    	r = r - (48 * 3);
+    
+    	carry = VALUES[ r*2 ];
+    	Cpart[z] =  VALUES[ (r*2)+1 ];
+
+
+        --x;
+        --y;
+        --z;
+        
+        a0 = 0;
+        b0 = 0;
+        
+        
+        if( x<0 )
+    		a0 = 1;
+    
+    	if( y<0 )
+    		b0 = 1;
+    
+        if( a0 && b0 )	{
+    
+    		Cpart[z] = carry;
+    		a0 = 0;
+    		b0 = 0;
+    	}
+    	else	{
+    
+    		goto ADDloop;
+    	}        
+        
+        shift_left_leading_zeroes( Cpart );
+        
+        // After the indices reach A[0] and B[0]
+        if( PART == 1 ) PART = 2; // wholepart
+        else if( PART == 2 ) PART = 0; // operands consumed
+    }
+    
+    if( PART==1 ) { // fractpart
+        
+        //set pointers for the ->fractpart buffers of each operand, including initialiizing the fractpart buffer for the lvalue on the heap.
+        
+        Apart = A->fractpart;
+        Bpart = B->fractpart;
+        
+	    lenA = lean_strlen( Apart );
+	    x = lenA-1;
+
+	    lenB = lean_strlen( Bpart );
+	    y = lenB-1;        
+
+        z = x + 2;
+
+	    if( y > x ) {
+	       
+	        z = y + 2;
+	    }
+        
+	   if( C->fractpart==(char*)0 )    {
+            
+            D = &C->fractpart;
+            *D = (char*) malloc( z + 1 );
+        }
+        
+        Cpart = C->fractpart;
+        carry = (unsigned char)'0';
+        --z;
+        
+        goto ADDloop;
+    }
+    
+    if( PART==2 )   { // wholepart
+    
+        //set pointers for the ->wholepart buffers, and initialise the buffer for lvalue->wholepart on the heap.
+        Apart = A->wholepart;
+        Bpart = B->wholepart;
+ 
+ 	    lenA = lean_strlen( Apart );
+	    x = lenA-1;
+
+	    lenB = lean_strlen( Bpart );
+	    y = lenB-1;
+	    
+	    if( y > x )
+	        z = y + 2;
+	    else
+	        z = x + 2;
+	       
+	    
+        if( C->wholepart==(char*)0 )    {
+            
+            D = &C->wholepart;
+            *D = (char*) malloc( z + 1 );
+        }
+        
+        if( carry != '0' )   {
+            
+            Cpart[0] = '0';
+            shift_left_leading_zeroes( Cpart );
+        }
+
+        Cpart = C->wholepart;
+        --z;
+        
+        // No need to initialise carry, as that was set by the carry left after the msc of fractparts have combined.
+        goto ADDloop;
+    }
+
+
+    if( (A->sign=='+') && (B->sign=='+') )  {
+    
+        C->sign = '+';
     }
     else    {
         
-        // Both operand digitstrings were of equal length.
-        if( ab.max==B ) {
-            
+        AP largest = MAX( A, B );
+        
+        if( largest==A ) {
+    
+                if( A->sign=='-' )
+                    C->sign = '-';
+        }
+        else if( largest==B )  { 
+             
             if( B->sign=='-' )
                 C->sign = '-';
         }
-        else    {
-            
-            if( A->sign=='-' )
-                C->sign = '-';
-        }
+
     }
     
 	/**
@@ -703,7 +871,200 @@ ADDloop:
 
 	return;
 }
+
 static void SUB( AP A, AP B, AP C, Flags extra ) {
+
+    register char* Apart;
+    register char* Bpart;
+    register char* Cpart;
+    char** D;
+
+    unsigned char a;
+    unsigned char b;
+    signed short carry;
+    signed short r;
+
+    unsigned char a0;
+    unsigned char b0;
+    	
+    uint8_t PART = 1;
+    
+	uint64_t lenA;
+	int64_t x;
+	
+	uint64_t lenB;
+	int64_t y;
+	
+	int64_t z;
+
+   	a0 = 0;
+    b0 = 0;
+ 
+	a = '0';
+	b = '0';
+	carry = '0';
+	r = '0';
+	
+	
+    while( 0 )  {
+      
+    SUBloop:
+    
+    	if( a0 )
+    		a = '0';
+    	else
+    		a = Apart[x];
+    
+    	if( b0 )
+    		b = '0';
+    	else
+    		b = Bpart[y];
+    
+    	r = (signed short) ( (a - b) + carry );
+    	
+    	
+    	r = r - 48;
+    
+    	if( r < 0 )	{
+    
+    		r = 10 + r;
+    		carry = '0' - 1;
+    	}
+    	else	{
+    
+    		carry = VALUES[ ((r)*2) ];
+    	}
+    
+    	Cpart[z] = VALUES[ ((r)*2)+1 ];
+    
+    	--z;
+    	--x;
+    	--y;
+    
+    
+    	if( x<0 )
+    		a0 = 1;
+    
+    	if( y<0 )
+    		b0 = 1;
+    
+    
+    	if( a0 && b0 )	{
+    
+            if( PART==2 )   {
+    
+        		if( carry == ('0' - 1) )	{
+        
+        			// result is negative.
+        			Cpart[z] = '-';
+        		}
+        		else
+        			Cpart[z] = carry;
+            }
+            else    {
+                
+                Cpart[0] = '0';
+                shift_left_leading_zeroes( Cpart );
+                goto SUBloop;
+            }
+    
+    	}
+    	else
+    		goto SUBloop;
+
+       if( PART == 1 ) PART = 2; // wholepart
+        else if( PART == 2 ) PART = 0; // operands consumed
+    }
+    
+    if( PART==1 ) { // fractpart
+        
+        //set pointers for the ->fractpart buffers of each operand, including initialiizing the fractpart buffer for the lvalue on the heap.
+        
+        Apart = A->fractpart;
+        Bpart = B->fractpart;
+        
+	    lenA = lean_strlen( Apart );
+	    x = lenA-1;
+
+	    lenB = lean_strlen( Bpart );
+	    y = lenB-1;        
+
+        z = x + 2;
+
+	    if( y > x ) {
+	       
+	        z = y + 2;
+	    }
+        
+	   if( C->fractpart==(char*)0 )    {
+            
+            D = &C->fractpart;
+            *D = (char*) malloc( z + 1 );
+        }
+        
+        Cpart = C->fractpart;
+
+        --z;
+        
+        goto SUBloop;
+    }
+    
+    if( PART==2 )   { // wholepart
+    
+        //set pointers for the ->wholepart buffers, and initialise the buffer for lvalue->wholepart on the heap.
+        Apart = A->wholepart;
+        Bpart = B->wholepart;
+ 
+ 	    lenA = lean_strlen( Apart );
+	    x = lenA-1;
+
+	    lenB = lean_strlen( Bpart );
+	    y = lenB-1;
+	    
+	    if( y > x )
+	        z = y + 2;
+	    else
+	        z = x + 2;
+	       
+	    
+        if( C->wholepart==(char*)0 )    {
+            
+            D = &C->wholepart;
+            *D = (char*) malloc( z + 1 );
+        }
+        
+        if( carry != '0' )   {
+            
+            Cpart[0] = '0';
+            shift_left_leading_zeroes( Cpart );
+        }
+
+        Cpart = C->wholepart;
+        --z;
+        
+        // No need to initialise carry, as that was set by the carry left after the msc of fractparts have combined.
+        goto SUBloop;
+    }
+
+    
+	/**
+	END OF SUB BLOCK
+	*/
+
+	if( *Cpart =='-' )	{
+
+        C->sign = '-';
+        *Cpart = '0';
+	}
+	else    { C->sign = '+'; }
+	
+	shift_left_leading_zeroes( Cpart );
+	
+	return;
+}
+
+
+static void SUB_old( AP A, AP B, AP C, Flags extra ) {
 
 	char* Awp = A->wholepart;
 	char* Bwp = B->wholepart;
@@ -716,7 +1077,8 @@ static void SUB( AP A, AP B, AP C, Flags extra ) {
 	int64_t y = lenB-1;
 
 	uint64_t lenC = max(lenA,lenB)+1;
-
+    uint8_t PART = 2;
+    
 	if( C==(AP)0 )  {
 
 		C = (AP)calloc( 1, sizeof(struct ap) );
@@ -786,13 +1148,22 @@ SUBloop:
 
 	if( a0 && b0 )	{
 
-		if( carry == ('0' - 1) )	{
+        if( PART==2 )   {
 
-			// result is negative.
-			Cwp[z] = '-';
-		}
-		else
-			Cwp[z] = carry;
+    		if( carry == ('0' - 1) )	{
+    
+    			// result is negative.
+    			Cwp[z] = '-';
+    		}
+    		else
+    			Cwp[z] = carry;
+        }
+        else    {
+            
+            Cwp[0] = '0';
+            shift_left_leading_zeroes( Cwp );
+        }
+
 	}
 	else
 		goto SUBloop;
@@ -924,16 +1295,16 @@ static void MUL( AP A, AP B, AP C, Flags extra ) {
 }
 
 /*
-
 char* Afp = A->fractpart
 char* Bfp = B->fractpart
-
-
 */
 
-
+static Flags spare_extra;
 
 static void DIV( AP A, AP B, AP C, Flags extra ) {
+
+    if( extra == (Flags)0 )
+        extra = spare_extra;
 
 	char* Awp = A->wholepart;
 	char* Bwp = B->wholepart;
@@ -941,9 +1312,10 @@ static void DIV( AP A, AP B, AP C, Flags extra ) {
 
 	uint64_t strlen_B = lean_strlen(Bwp);
 	uint64_t strlen_A = lean_strlen(Awp);
-	uint64_t strlen_C = strlen_A + 50;
+	uint64_t strlen_C = strlen_A + 20;
 
 	uint64_t strlen_REMAINDER = 0;
+
 
 	char* REMAINDER; 
 	char* RESULT;
@@ -970,15 +1342,22 @@ static void DIV( AP A, AP B, AP C, Flags extra ) {
 		C->wholepart = (char*)malloc( strlen_C+1 );
 	}
 
+    uint64_t len_c_wp = strlen_A;
+    // As this current implementation of the function reads only the wholeparts of
+    // RVALUES A and B, until I have the DIV function fundamentally to my liking.
+    
+    
     if( C->wholepart == (char*)0 )  {
 
-        C->wholepart = (char*)malloc( strlen_C+1 );
+        C->wholepart = (char*)malloc( len_c_wp + 1 );
     }
+    
+
 
 	Cwp = C->wholepart;
 
-	Cwp[ strlen_C ] = '\0';
-	*extra |= ( OPDIV << 8 );
+	//Cwp[ strlen_C ] = '\0';
+	//*extra |= ( OPDIV << 8 );
 
 	uint64_t x = 0;
 
@@ -1003,16 +1382,16 @@ static void DIV( AP A, AP B, AP C, Flags extra ) {
 
 Loop:
 
-	*extra = *extra & (65535-255);
+    
+	*extra = *extra & (255<<16);
+	
 	BXN( APREMAINDER, B, APRESULT, extra );
 
 	SUB( APREMAINDER, APRESULT, APNEWREMAINDER, extra );
 
 	signed diff = cmpdstr( APNEWREMAINDER->wholepart, "0" );
 
-//#include <assert.h>
-	//  assert( diff>-1 );
-
+    
 	Cwp[x] = (char) (*extra & 255 ) + 48;
 	Cwp[x+1] = '\0';
 	++x;
@@ -1028,12 +1407,12 @@ Loop:
         The fixed-point decimal has it's position for result string C at the same position it is for input A.
         Ergo, offset_fp = strlen(Awp). When this function returns, the main() function shifts the string so
         as to eliminate leading 0's, but as this iteration of the function only thinks of Integer strings,
-        a shimmy is needed. Or, I could update my functions. 
-        
-        
+        a shimmy is needed. Or, I could update my functions.
         */
 		
-	    C->sign = (A->sign != B->sign) ? '-' : '+';	
+	    C->sign = (A->sign != B->sign) ? '-' : '+';
+	    
+	    *extra |= (len_c_wp << 16);
 		return;
 	}
 
@@ -1095,15 +1474,15 @@ bxn_loop:
 	}
     
 	ULL strlen_R1 = lean_strlen( APR1->wholepart );
+	
 
 	if( C==(AP)0 )
-		C = aplib->BlankAP();
+		*C = *aplib->BlankAP();
 	
 	if( C->wholepart == (char*)0 )
 	    C->wholepart = (char*)malloc( strlen_R1 + 1 );
 
 	Cwp = C->wholepart;
-    shift_left_leading_zeroes( Cwp );
     
 	*extra = *extra | (count&255);
 	strcpy( Cwp, APR1->wholepart );
@@ -1117,7 +1496,6 @@ bxn_loop:
 	return;
 
 }
-
 
 #ifndef EXPECT_STDLIB
 /* nostdlib malloc( n ) */
@@ -1155,6 +1533,10 @@ void* register_heap_alloc_free( void (*f)(void* ep) )  {
 #endif
 
 
+static AP CopyAP( AP A, Flags extra );
+
+
+
 static AP BlankAP() {
 
 	return (AP)calloc( 1, sizeof(struct ap) );
@@ -1162,7 +1544,8 @@ static AP BlankAP() {
 
 static AP QuickAP( char* val )	{
 
-	AP A = (AP)calloc( 1,sizeof(struct ap) );
+	AP A = (AP) calloc( 1,sizeof(struct ap) );
+	
 	A->sign = '+';
 	A->base = 10;
 
@@ -1179,32 +1562,45 @@ static AP QuickAP( char* val )	{
 		    
 			A->wholepart = (char*)malloc(x + 1);
 			z = x;
-            break;
 		}
+		
 		++x;
 	}
 
-    
 	if( A->wholepart==(char*)0 )    {
 
 		A->wholepart = strdup( val );
 		A->fractpart = strdup( "0" );
 	}
-	else	{
+    else    {
+        
+        char* _;
 
-		while( y<z )
-			A->wholepart[y] = val[y++];
-
-		A->wholepart[y] = '\0';
-
-		A->fractpart = (char*)malloc( (lean_strlen(val)-y) + 1 );
-		z = 0;
-
-		while( val[y] )
-			A->fractpart[z++] = val[y++];
-
-		A->fractpart[z] = '\0';
-	}
+        _ = A->wholepart;
+        
+        y = z;
+        while( y )  {
+            
+            *_ = *val;
+            ++val;
+            ++_;
+            --y;
+        }
+        
+        A->fractpart = (char*)malloc( (x - z) + 1 );
+        _ = A->fractpart;
+        
+        y = x - z;
+        ++val; // skip past the '.' 
+        
+        while( y ) {
+            
+            *_ = *val;
+            ++val;
+            ++_;
+            --y;
+        }
+    }
 
 	return A;
 }
@@ -1228,7 +1624,6 @@ AP SimpleAP( char* val )	{
 }
 
 
-static AP CopyAP( AP A, Flags extra );
 
 static AP CopyAP( AP A, Flags extra )   {
 
@@ -1399,6 +1794,8 @@ void InitAPLIB()    {
 	aplib->root = Root;
 	aplib->divby2 = divby2;
 
+    aplib->swapsign = swapsign;
+    
     ops[ OPADD ] = aplib->add;
     ops[ OPSUB ] = aplib->sub;
     ops[ OPMUL ] = aplib->mul;
@@ -1406,23 +1803,28 @@ void InitAPLIB()    {
     ops[ OPLOG ] = aplib->logb;
     ops[ OPSQROOT ] = aplib->root;
 
+    spare_extra = (int*)malloc( sizeof(int) );
     init_planck();
 	aplib_initialised = 1;
 	return;
 }
+
 void DeInitAPLIB()  {
 
 	aplib_initialised = 0;
-
+	free( aplib );
 }
+
 static void FreeAllConstants( ) {
+
+    free( spare_extra );
 
 	FreeAP( AP0 );
 	FreeAP( AP1 );
 	FreeAP( AP2 );
 	FreeAP( AP10 );
 	FreeAP( e );
-	FreeAP( PI );
+	FreeAP( AP_PI );
 	FreeAP( FGC );
 	FreeAP( GR );
 	FreeAP( AP3 );
@@ -1437,7 +1839,6 @@ static void FreeAllConstants( ) {
 	FreeAP( AP1_7 );
 	FreeAP( AP2_7 );
 	FreeAP( AP22_7 );
-	FreeAP( PI );
 
 	return;
 }
