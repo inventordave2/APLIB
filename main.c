@@ -4,25 +4,114 @@
 #include <math.h>
 
 #include "./lean_string.h"
+#include "./tools.h"
 #include "./aplib.h"
 #include "./native.h"
 #include "./ieee754.h"
+#include "./trig.h"
+#include "./tests.h"
+
 
 int main( int argc, char** argv )   {
 
-    if( !strcmp( argv[1], "cosine" ) )    {
+    char* opt = argv[1];
+    char* operand1 = argv[2];
+    char* operand2 = argv[3];
+    
+    if( lean_strcmp( opt, "ieee_754" ) )    {
+        
+        double f;
+        if( argc>2 )
+            f = atof( operand1 );
+        else
+            f = 200.0;
+        
+        char* _ = IEEE_readFloat( f );
+        
+        printf( "Internal float bitfield in ieee754 format for float value '%.5f' is:\n\n%s\n", f, _ );
+
+        return 0;
+    }
+    
+    
+    if( lean_strcmp( opt, "tests" ) )   {
+    
+            double a = 0.5;
+            int p = 20;
+            
+            if( argc > 1 )
+                if( operand1 != (char*)0 )
+                    a = atof( operand1 );
+            if( argc > 2 )
+                if( operand2 != (char*)0 )
+                    p = atoi( operand2 );
+                    
+                    
+            tangent_test( a, p );
+            
+            
+            
+            
+            return 0;
+    }
+    
+    
+    if( lean_strcmp( argv[1], "calc_pi" ) )    {
+        
+
+        double r = generate_half_pi();
+        
+        printf( "Approx value for (1/2) * PI = %.20f\n", r );
+        
+        exit(0);
+    }
+    
+    if( lean_strcmp( argv[1], "bitfield_add" ) )    {
+    
+        if( argc > 2 )  {
+            
+            unsigned int A = atoi( argv[2] );
+            unsigned int B = atoi( argv[3] );
+            unsigned int C;
+            
+            SPEEDTESTINIT();
+            
+            SPEEDTESTBEGIN();
+            C = BITFIELD_ADD( A, B );
+            SPEEDTESTEND();
+            
+            CALCSPEED();
+            
+        
+            printf( "Result of bitfield addition for '%d' + '%d' = '%d'.\n", A, B, C );
+            printf( "Speed of function was %.20f secs.\n", timespent );
+            
+            
+            SPEEDTESTBEGIN();
+            C = A + B;
+            SPEEDTESTEND();
+            CALCSPEED();
+            
+            printf( "Result of native + operator for '%d' + '%d' = '%d'.\n", A, B, C );
+            printf( "Speed of native instruction was %.20f secs.\n", timespent );
+            
+            return 0;
+        }
+        
+    }
+
+    if( lean_strcmp( argv[1], "sine" ) )    { 
         
         double a = 1.0;
         
         if( argc > 2 )
             a = atof( argv[2] );
         
-        printf( "My implementation calculates cosine(%.20f) = %.20f.\n\
-        The cstdlib version calculates %.20f.\n", a, quick_cosine(a), cos(a) );
+        printf( "My version of sine calculates sine(%.10f) to be: %.10f\nThe cstdlib calcs %.10f", a, sine( a,6 ), sin(a) );
         
         exit(0);
     }
-    if( !strcmp( argv[1], "newtons_root") )  {
+    if( lean_strcmp( argv[1], "newtons_root") )  {
         
         char* input = "100.0";
         
@@ -50,9 +139,7 @@ int main( int argc, char** argv )   {
         printf( "stdlib version took: %f\nmy custom method took: %f\n", stdlib_method, custom_method );
         exit(0);
     }
-    
-    
-    if( !strcmp( argv[1], "stringify_float" ) )    {
+    if( lean_strcmp( argv[1], "stringify_float" ) )    {
         
         // char* IEEE_readDouble( double f )
         char* input = "65535.0";
@@ -64,20 +151,19 @@ int main( int argc, char** argv )   {
 
         char* result = IEEE_readFloat( x );
         
-        printf( "Inputted '%f10'. Binary string is '%s'\n", x, result );
+        printf( "Inputted '%.20f'. Binary string is '%s'\n", x, result );
         
         float y = 0.0;
         
         //void IEEE_writeDouble(double* dest, char* str)
         IEEE_writeFloat( &y, result );
 
-        printf( "writing back to float silo indicates value %f .\n", y );
+        printf( "writing back to float silo indicates value %.20f .\n", y );
         
         
         return 0;
     }
-
-    if( !strcmp(argv[1], "native_log") )    {
+    if( lean_strcmp(argv[1], "native_log") )    {
         
         char* input = "5.0";
         if( argc>2 )
@@ -85,12 +171,11 @@ int main( int argc, char** argv )   {
             
         double A = (double) atof( input );
         
-        test_log_native_impl( A );
+        log_test( A );
 
         return 0;
 
     }
-
 
 	InitAPLIB();
 
@@ -99,6 +184,7 @@ int main( int argc, char** argv )   {
 	char* arg3;
 
 	if( argc < 4 )	{
+
 		printf( "Please invoke the test app with 3 args: OPERATION LHS(A) RHS(B). Generating a default input.\n" );
 
 		arg1 = strdup( "add" );
@@ -112,10 +198,10 @@ int main( int argc, char** argv )   {
 		arg3 = strdup( argv[3] );
 	}
 
-	int base = 10;
-	AP A = aplib->NewAP( arg2, strdup("0"), "+", &base, 128 );
-	AP B = aplib->NewAP( arg3, strdup("0"), "+", &base, 128 );
+	AP A = aplib->QuickAP( arg2 );
+	AP B = aplib->QuickAP( arg3 );
 	AP C = aplib->BlankAP();
+
 	Flags extra = (Flags) calloc( 1, sizeof(int) );
 
 	char opcode = aplib->get_opcode( arg1 );
@@ -123,16 +209,20 @@ int main( int argc, char** argv )   {
 
     operator = ops[ opcode ];
     
+    SPEEDTESTINIT();
+    SPEEDTESTBEGIN();
     operator( A, B, C, extra );
+    SPEEDTESTEND();
+    CALCSPEED();
     
-    printf( "Result Calculated.\n" );
+    fflush( stdout );
+    
+    printf( "Result of operator '%s' calculated in %.30f clocks.\n", timespent, arg1 );
  
 	// EMIT OPERATION RESULT.
 	if( emit_result )	{
-
-		shift_left_leading_zeroes( C->wholepart );
-		shift_left_leading_zeroes( C->fractpart );
 		
+		/*
 		char* A_WP;
 		char* A_FP;
 		char* B_WP;
@@ -141,6 +231,7 @@ int main( int argc, char** argv )   {
         char* Z	= "0";	
 		char* C_WP;
 		char* C_FP; 
+		
 		
 		if( cmpdstr(A->wholepart, "0")>0 )
 		    A_WP = A->wholepart;
@@ -172,8 +263,10 @@ int main( int argc, char** argv )   {
 		else
 		    C_FP = Z;
 		
+        */
+        
 		printf( "Result of '%s.%s' '%s' '%s.%s' = '%s.%s'.\n", \
-		A_WP, A_FP, arg1, B_WP, B_FP, C_WP, C_FP );
+		A->wholepart, A->fractpart, arg1, B->wholepart, B->fractpart, C->wholepart, C->fractpart );
 
 	}
 
