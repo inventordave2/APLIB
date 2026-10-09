@@ -47,7 +47,8 @@ typedef struct aplib_t {
 	void (*setBase)(  AP A, int Base );
 	char (*getSign)(  AP A );
 	void (*setSign)(  AP A, char* s );
-
+    void (*swapsign)( AP A );
+    
 	Precision (*getPrecision)(  AP A );
 	void (*setPrecision)(  AP A, Precision P );
 
@@ -79,7 +80,7 @@ typedef struct aplib_t {
 	void (*cos)( AP R, AP C, Flags extra );
 	void (*sine)( AP R, AP C, Flags extra );
 	void (*tan)( AP R, AP C, Flags extra );
-	void (*PI)( Precision P, Flags extra ); // if Precision P==0, the Precision is based on the current setting for aplib->Precision
+	//void (*PI)( Precision P, Flags extra ); // if Precision P==0, the Precision is based on the current setting for aplib->Precision
 
 
 } aplib_t;
@@ -92,6 +93,10 @@ extern struct aplib_t* aplib;
 #define OPDIV 5
 #define OPSQROOT 6
 #define OPLOG 7
+#define OPSINE 8 
+#define OPCOS 9 
+#define OPTAN 10 
+
 
 #ifndef real
 #define real double
@@ -101,10 +106,34 @@ extern struct aplib_t* aplib;
 #endif
 #define ap_bool unsigned char
 
-#define NULLAP(A) A = (AP)0
+#define NULLAP(A) (A = (AP)0)
+
+typedef struct rational {
+
+	int n;
+	int m;
+
+} rational;
+typedef struct ap_rational  {
+    
+    AP n;
+    AP m;
+} ap_rational;
+
+typedef struct result {
+
+	double r;
+	struct rational n_m;
+
+} result;
+typedef struct ap_result    {
+    
+    AP r;
+    struct ap_rational n_m;
+} ap_result;
 
 // Extra helper objects.
-#include "./aplib_extra_typedefs.h"
+#include "./aplib_constants.h"
 
 /* 'nostdlib' (0-dependency) heap allocate/free function signatures. */
 extern void* (*malloc_fnc)( int size );
