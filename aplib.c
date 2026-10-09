@@ -297,7 +297,7 @@ static void swapsign( AP A );
 */
 static void ADD( AP A, AP B, AP C, Flags extra );
 static void SUB( AP A, AP B, AP C, Flags extra );
-static void MUL( AP A, AP B, AP C, Flags extra );
+static UL( AP A, AP B, AP C, Flags extra );
 
 // From below, the implementations for the operators are even more incomplete. Still testing iteratively.
 static void DIV( AP A, AP B, AP C, Flags extra );
@@ -1224,82 +1224,98 @@ if( A->fractpart==(char*)0 ) A->fractpart = (char*)calloc( lenfp+1, sizeof(char)
 
 static void MUL( AP A, AP B, AP C, Flags extra ) {
 
-	short int PART = 1;
+	short int PART;
 	
-	register char* Apart = A->fractpart;
-	register char* Bpart = B->fractpart;
+	register char* Apart;
+	register char* Bpart;
 	register char* Cpart;
 
-	uint64_t lenA = lean_strlen( A->fractpart );
-	uint64_t lenB = lean_strlen( B->fractpart );
-	uint64_t lenC = lenA + lenC;
+	uint64_t lenA;
+	uint64_t lenB;
+	uint64_t lenC;
 
+	uint64_t lenA_wp;
+	uint64_t lenA_fp;
+	uint64_t lenB_wp;
+	uint64_t lenB_fp;
+	uint64_t lenC_wp;
+	uint64_t lenC_fp;
+
+	register signed long long int x;
+	register signed long long int y;
+	register signed long long int z;
+	register signed long long cz;
+
+	signed long long tz;
+
+	unsigned char a;
+	unsigned char b;
+	unsigned char c;
+	unsigned char carry;
+	
 	if( C==(AP)0 )	{
 
-		
+		AP* D = &C;
+		*D = (AP)malloc( sizeof(struct ap) );
+		C->wholepart = (char*)0;
+		C->fractpart = (char*)0;
+		C->sign = '+';
+		C->base = 10;
 	}
-	unsigned char carry = 0;
-	unsigned char a = 0;
-	unsigned char b = 0;
-	unsigned char c = 0;
-    unsigned char ires_carry = 0;
-    
-	register signed long long int x = lenA-1;
-	register signed long long int y = lenB;
-	register signed long long int z = 0;
-    
-    
-	register signed long long cz = 0;
-	signed long long tz = 0;
 
-	z = cz = tz = lenA+lenB-1;
+	lenB = lean_strlen( B->fractpart );
+	lenC = lenA + lenB;
+	
+	a = 0;
+	b = 0;
+	carry = 0;
+	c = 0;
 
+	x = lenA;
+	y = lenB;
+	z = 0;
+	tz = 0;
+	cz = 0;
+	tz = 0;
 
+	z = cz = tz = lenC-1;
+
+	Apart = A->fractpart;
+	Bpart = B->fractpart;
+	Cpart = C->fractpart;		
 	// FOR_EACH digit in A, starting with lsd of fp, A[y] * B[all columns, 1 at a time, both fp and wp, then that result (2 buffers, cwp anf cfp), is preserved for accumulation.
+
 	
 	b = Bpart[y] & 15;
 	
 	while( x )  {
 		
-   	MULloop:
+   	A_row_loop:
 	
 		--x;
 		a = Apart[x] & 15;
-    	
 		c = (a * b) + carry + Cpart[ cz ];
 		carry = iVALUES[ (c*2) ];
 		Cpart[cz] = iVALUES[ (c*2)+1 ];
-        
 		if( carry > 8 ) fprintf( stderr, "Carry digit > 8 in MUL: %d\n", carry );
+	} 
 
-		if( y==0 )	{
+	if( Bpart == B->fractpart )	{
 
-            Cpart[ cz-1 ] += carry;
+		Bpart = B->wholepart;
+		APart = A->fractpart;
 
-			/*
-			Each loop of A (next digit in B), we no longer accum the same C offset,
-			it's now shunted to the left 1.
-			*/
-			
-			--x;
-			y = lenB-1;
-			--z;
-			cz = z;
-			carry = 0;
-		}
-		else    {
-		    
-			--y;
-			--cz;
-		}
+		lenA = lean_strlen( A->
 	}
 
-    while( lenC ) {
+	// Convert all digits in C parts via c |= 48.
+	while( lenC ) {
         
         Cpart[ tz-- ] |= 48;
         --lenC;
     }
 
+	
 	if( A->sign != B->sign )
 		C->sign = '-';
 	else
