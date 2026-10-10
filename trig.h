@@ -21,7 +21,7 @@ typedef struct triangle_t    {
 
     vector2d A;
     vector2d B;
-    vector2d C:
+    vector2d C;
 
     double hyp;
     double opp;
@@ -38,7 +38,6 @@ typedef struct triangle_t    {
 } triangle_t;
 
 #define Triangle struct triangle_t
-#define Vector struct vector2d 
 
 extern double generate_half_pi(void);
 extern double deg_to_rad(double degrees, double half_pi);

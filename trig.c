@@ -15,16 +15,18 @@ static inline void triangle_internals( Triangle* T );
 double tangent( double sine_, double cos_ )    {
 
     return ( sine_/cos_ );
-]
+}
 
 double angle( double tan_ )    {
 
     int max_radix = 17;
     double e = tan_;
+    double x = tan_;
 
     signed int sign = -1;
     int n = 3;
     int v = 0;
+
     do    {
 
         v = 2;
@@ -49,7 +51,7 @@ double atan_dave( double tan_ )    {
     double x = tan_;
 
     if( x > 1.0 )    {  return (generate_half_pi() - atan_dave( 1.0/x )); }
-    if( x < 0.0 )    { x = 0.0 - x; return (0.0 - atan_dave( x ));
+    if( x < 0.0 )    { x = 0.0 - x; return (0.0 - atan_dave( x )); }
 
 
     int n = 1;
@@ -58,40 +60,34 @@ double atan_dave( double tan_ )    {
  
     while( (n+=2) < high_order )    {
         
-        x = x + ( sign * ( quick_exp( x, n )/(double)n ) );
+        x = x + ( sign * ( quickexp( x, n )/(double)n ) );
         if( sign==-1 )    sign = +1;
         else              sign = -1;
     }
 
-                      
-    if( cos_ < 0.0 )    { x += (generate_half_pi()*2.0); }
-    else if( (cos_ >= 0.0) && (sine_ >= 0.0) )    { if( x < 0.0 ) x += (generate_half_pi()*4.0); }
-
     return x;
 }
 
-
 inline void triangle_internals( Triangle* T )    {
 
-    double x = T->B->x - T->A->x;
-    double y = T->B->y - T->A->y;
+    double x = T->B.x - T->A.x;
+    double y = T->B.y - T->A.y;
     
     T->hyp = root2( (x * x) + (y * y) );
-    T->opp = root2( (T->B->y * T->B->y) + (T->A->y * T->A->y) );
-    T->adj = root2( (T->A->x * T->A->x ) + (T->B->x * T->B->x) );
+    T->opp = root2( (T->B.y * T->B.y) + (T->A.y * T->A.y) );
+    T->adj = root2( (T->A.x * T->A.x ) + (T->B.x * T->B.x) );
 
     // SOH-CAH-TOA
     T->sine_ = T->opp/T->hyp;
     T->cos_ = T->adj/T->hyp;
     T->tan_ = T->opp/T->adj;
     
-    T->a = angle( T.sine_, T.cos_ );
+    T->a = divide_and_conquer_angle( T->sine_, T->cos_ );
     T->c = generate_half_pi();
     T->b = T->c - T->a;
 
     return;
 }
-
 
 Triangle triangle_from_sides_vectors( triangle_side_t hypoteneuse, triangle_side_t opp_side, triangle_side_t adjacent_side )    {
 
@@ -106,15 +102,14 @@ Triangle triangle_from_sides_vectors( triangle_side_t hypoteneuse, triangle_side
     vector2d C;
     C.x = B.x; C.y = A.y;
 
-    T.A = T;
-    T.B = T;
-    T.C = T;
+    T.A = A;
+    T.B = B;
+    T.C = C;
 
     triangle_internals( &T );
 
     return T;
 }
-
 
 Triangle triangle_from_hyp_vector( triangle_side_t hypoteneuse )    {
 
@@ -145,7 +140,7 @@ double tangent_alt( double angle_in_radians, int precision )   {
     
     double opp = sine( angle_in_radians, precision);
     double hyp = 1.0;
-    double adj = sqrt( hyp - (opp*opp) );
+    double adj = root2( hyp - (opp*opp) );
 
     return (double)opp/adj;
 }
@@ -168,7 +163,7 @@ double sine( double x, int terms ) {
 double cosine( double x, int terms )    {
 
     double s = sine( x, terms );
-    return root2( (1 - (s * S) );
+    return root2( 1 - (s * s) );
 }
 
 double root2( double a )   {

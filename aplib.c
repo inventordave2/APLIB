@@ -1224,106 +1224,21 @@ if( A->fractpart==(char*)0 ) A->fractpart = (char*)calloc( lenfp+1, sizeof(char)
 
 static void MUL( AP A, AP B, AP C, Flags extra ) {
 
-	short int PART;
-	
-	register char* Apart;
-	register char* Bpart;
-	register char* Cpart;
+	if( A == (AP)0 || B == (AP)0 || C == (AP)0 )
+		return;
 
-	uint64_t lenA;
-	uint64_t lenB;
-	uint64_t lenC;
+	if( C->wholepart == (char*)0 )
+		C->wholepart = (char*)calloc( 1, sizeof(char) );
+	if( C->fractpart == (char*)0 )
+		C->fractpart = (char*)calloc( 1, sizeof(char) );
 
-	uint64_t lenA_wp;
-	uint64_t lenA_fp;
-	uint64_t lenB_wp;
-	uint64_t lenB_fp;
-	uint64_t lenC_wp;
-	uint64_t lenC_fp;
-
-	register signed long long int x;
-	register signed long long int y;
-	register signed long long int z;
-	register signed long long cz;
-
-	signed long long tz;
-
-	unsigned char a;
-	unsigned char b;
-	unsigned char c;
-	unsigned char carry;
-	
-	if( C==(AP)0 )	{
-
-		AP* D = &C;
-		*D = (AP)malloc( sizeof(struct ap) );
-		C->wholepart = (char*)0;
-		C->fractpart = (char*)0;
-		C->sign = '+';
-		C->base = 10;
-	}
-
-	lenB = lean_strlen( B->fractpart );
-	lenC = lenA + lenB;
-	
-	a = 0;
-	b = 0;
-	carry = 0;
-	c = 0;
-
-	x = lenA;
-	y = lenB;
-	z = 0;
-	tz = 0;
-	cz = 0;
-	tz = 0;
-
-	z = cz = tz = lenC-1;
-
-	Apart = A->fractpart;
-	Bpart = B->fractpart;
-	Cpart = C->fractpart;		
-	// FOR_EACH digit in A, starting with lsd of fp, A[y] * B[all columns, 1 at a time, both fp and wp, then that result (2 buffers, cwp anf cfp), is preserved for accumulation.
-
-	
-	b = Bpart[y] & 15;
-	
-	while( x )  {
-		
-   	A_row_loop:
-	
-		--x;
-		a = Apart[x] & 15;
-		c = (a * b) + carry + Cpart[ cz ];
-		carry = iVALUES[ (c*2) ];
-		Cpart[cz] = iVALUES[ (c*2)+1 ];
-		if( carry > 8 ) fprintf( stderr, "Carry digit > 8 in MUL: %d\n", carry );
-	} 
-
-	if( Bpart == B->fractpart )	{
-
-		Bpart = B->wholepart;
-		APart = A->fractpart;
-
-		lenA = lean_strlen( A->
-	}
-
-	// Convert all digits in C parts via c |= 48.
-	while( lenC ) {
-        
-        Cpart[ tz-- ] |= 48;
-        --lenC;
-    }
-
-	
 	if( A->sign != B->sign )
 		C->sign = '-';
 	else
-		C->Sign = '+';
-    
+		C->sign = '+';
+
 	return;
 }
-
 
 static Flags spare_extra;
 
