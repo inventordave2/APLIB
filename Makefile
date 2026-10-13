@@ -8,8 +8,12 @@ DEBUG =-g -DDEBUG
 COMPILE =$(CC) $(DEBUG) $(OPTIM)
 EXPECT_STDLIB =-DEXPECT_STDLIB
 NO_STDLIB =-DNO_STDLIB
+appname=app
 
 all: aplib lean_string trig ieee754 native tests app_front
+
+debug_it:
+	gdb ./$(appname).exe
 
 tests: ./tests.c ./tests.h
 	$(COMPILE) $(NOEXE) $(EXPECT_STDLIB) -o ./tests.o ./tests.c
@@ -30,7 +34,7 @@ native: ./native.c ./native.h
 	$(COMPILE) $(NOEXE) -o ./native.o ./native.c
 
 app_front: ./main.c ./lean_string.h
-	$(COMPILE) $(EXPECT_STDLIB) -o ./app.exe ./aplib.o ./trig.o ./ieee754.o ./native.o ./tests.o ./main.c -lm
+	$(COMPILE) $(EXPECT_STDLIB) -o ./$(appname).exe ./aplib.o ./trig.o ./ieee754.o ./native.o ./tests.o ./main.c -lm
 
 clean:
 	rm *.o

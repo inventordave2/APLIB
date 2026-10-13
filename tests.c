@@ -22,19 +22,20 @@ extern double angle( double tan_ );
 */
 void trig_fnc_tests( double angle_in_radians )	{
 
-		printf( "Stdlib sin(x) generates %lf for angle %lf.\n", sin(angle_in_radians), angle_in_radians );
-		printf( "Davelib sine(x) generates %lf for angle %lf.\n", sine( angle_in_radians, 20 ), angle_in_radians );
+		printf( "Stdlib sin(x) generates %.20f for angle %.20f.\n", sin(angle_in_radians), angle_in_radians );
+		printf( "Davelib sine(x) generates %.20f for angle %.20f.\n", sine( angle_in_radians, 20 ), angle_in_radians );
 		printf( "\n" );
 
-		printf( "Stdlib cos(x) generates %lf for angle %lf.\n", cos(angle_in_radians), angle_in_radians );
-		printf( "Davelib cos(x) generates %lf for angle %lf.\n", cosine(angle_in_radians, 10 ), angle_in_radians );
+		printf( "Stdlib cos(x) generates %.20f for angle %.20f.\n", cos(angle_in_radians), angle_in_radians );
+		printf( "Davelib cos(x) generates %.20f for angle %.20f.\n", cosine(angle_in_radians, 10 ), angle_in_radians );
 		printf( "\n" );
 
-		printf( "Stdlib tan(x) generates %lf for angle %lf.\n", tan(angle_in_radians), angle_in_radians );
-		printf( "Davelib tangent(x) generates %lf for angle %lf.\n", tangent( sin(angle_in_radians), cos(angle_in_radians) ), angle_in_radians );
+		printf( "Stdlib tan(x) generates %.20f for angle %.20f.\n", tan(angle_in_radians), angle_in_radians );
+		printf( "Davelib tangent(x) generates %.20f for angle %.20f.\n", tangent( sin(angle_in_radians), cos(angle_in_radians) ), angle_in_radians );
 		printf( "\n" );
 
-		printf( "Davelib atan_dave(x) generates %lf, which should match %lf.\n", atan_dave(angle_in_radians), angle_in_radians );
+        printf( "Stdlib atan(t) generates %.20f from tangent %.20f, for angle %.20f.\n", atan(tan(angle_in_radians)), tan(angle_in_radians), angle_in_radians );
+		printf( "Davelib atan_dave(t) generates %.20f, which should match %.20f.\n", atan_dave( tan(angle_in_radians) ), angle_in_radians );
 
 		exit(0);
 }

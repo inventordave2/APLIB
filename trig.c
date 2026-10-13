@@ -55,12 +55,12 @@ double atan_dave( double tan_ )    {
 
 
     int n = 1;
-    int high_order = 21;
+    int high_order = 48;
     int signed sign = -1;
  
     while( (n+=2) < high_order )    {
         
-        x = x + ( sign * ( quickexp( x, n )/(double)n ) );
+        x = x + ( sign * ( quickexp( tan_, n )/(double)n ) );
         if( sign==-1 )    sign = +1;
         else              sign = -1;
     }
