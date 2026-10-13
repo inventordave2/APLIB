@@ -1,0 +1,35 @@
+{
+  "name": "C/C++ Development Environment",
+  
+  // Use the official, optimized Microsoft C++ base image
+  "image": "://microsoft.com",
+
+  // Automate the installation of extra tools via "Features"
+  "features": {
+    // Installs the LLVM/Clang toolchain alongside default GCC
+    "ghcr.io/devcontainers-community/features/llvm:1": {
+      "version": "latest"
+    },
+    // Optional: Common utilities like the GitHub CLI
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  // Automatically pre-install VS Code Extensions inside the Codespace
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",       // Core C/C++ IntelliSense & Debugging
+        "ms-vscode.cpptools-extension-pack", // Includes CMake tools if needed
+        "twxs.cmake"                // CMake syntax highlighting
+      ],
+      "settings": {
+        // Enforce Clang-Format as the default C formatter
+        "C_Cpp.clang_format_fallbackStyle": "Google",
+        "editor.formatOnSave": true
+      }
+    }
+  },
+
+  // Run commands seamlessly right after the container is built
+  "postCreateCommand": "gcc --version && clang --version"
+}
