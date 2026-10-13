@@ -45,23 +45,19 @@ int main( int argc, char** argv )   {
     
     if( lean_strcmp( opt, "tests" ) )   {
     
-            double a = 0.5;
-            int p = 20;
-            
-            if( argc > 1 )
-                if( operand1 != (char*)0 )
-                    a = atof( operand1 );
-            if( argc > 2 )
-                if( operand2 != (char*)0 )
-                    p = atoi( operand2 );
-                    
-                    
-            tangent_test( a, p );
-            
-            
-            
-            
-            return 0;
+        double a = 0.5;
+        int p = 20;
+        
+        if( operand1 != (char*)0 )
+            a = atof( operand1 );
+        
+        if( operand2 != (char*)0 )
+            p = atoi( operand2 );
+        
+
+        trig_fnc_tests( a );
+    
+        return 0;
     }
     
     
@@ -228,7 +224,7 @@ int main( int argc, char** argv )   {
     
     fflush( stdout );
     
-    printf( "Result of operator '%s' calculated in %.30f clocks.\n", timespent, arg1 );
+    printf( "Result of operator '%s' calculated in %.30f clocks.\n", arg1, timespent );
  
 	// EMIT OPERATION RESULT.
 	if( emit_result )	{

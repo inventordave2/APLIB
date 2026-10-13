@@ -21,7 +21,7 @@ double angle( double tan_ )    {
 
     int max_radix = 17;
     double e = tan_;
-    double x = tan_;
+    double x = 0.0;
 
     signed int sign = -1;
     int n = 3;
@@ -67,6 +67,7 @@ double atan_dave( double tan_ )    {
 
     return x;
 }
+
 
 inline void triangle_internals( Triangle* T )    {
 

@@ -60,7 +60,6 @@ extern double root2( double a );
 extern struct triangle_t triangle_from_hyp_vector( triangle_side_t hypoteneuse );
 extern struct triangle_t triangle_from_sides_vectors( triangle_side_t hypoteneuse, triangle_side_t opp_side, triangle_side_t adjacent_side );
 
-inline void triangle_internals( Triangle* T );
 
 
 #define triangle_from_opp_adj(opp,adj) Triangle T; T.hyp = root2((opp*opp)+(adj*adj)); T.sine_ = T.opp/T.hyp; T.cos_ = T.adj/T.hyp; T.tan_ = T.opp/T.adj; T.a = angle( T.sine_, T.cos_ ); T.c = generate_half_pi(); T.b = T.c - T.a; (T);

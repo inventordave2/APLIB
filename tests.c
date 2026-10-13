@@ -27,14 +27,14 @@ void trig_fnc_tests( double angle_in_radians )	{
 		printf( "\n" );
 
 		printf( "Stdlib cos(x) generates %lf for angle %lf.\n", cos(angle_in_radians), angle_in_radians );
-		printf( "Davelib cos(x) generates %lf for angle %lf.\n" cosine(angle_in_radians), angle_in_radians );
+		printf( "Davelib cos(x) generates %lf for angle %lf.\n", cosine(angle_in_radians, 10 ), angle_in_radians );
 		printf( "\n" );
 
 		printf( "Stdlib tan(x) generates %lf for angle %lf.\n", tan(angle_in_radians), angle_in_radians );
-		printf( "Davelib tangent(x) generates %lf for angle %lf.\n", tangent(angle_in_radians), angle_in_radians );
+		printf( "Davelib tangent(x) generates %lf for angle %lf.\n", tangent( sin(angle_in_radians), cos(angle_in_radians) ), angle_in_radians );
 		printf( "\n" );
 
-		printf( "Davelib angle( tangent(x) ) generates %lf, which should match %lf.\n", angle( tangent(angle_in_radians) ), angle_in_radians );
+		printf( "Davelib atan_dave(x) generates %lf, which should match %lf.\n", atan_dave(angle_in_radians), angle_in_radians );
 
 		exit(0);
 }

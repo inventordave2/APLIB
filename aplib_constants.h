@@ -94,7 +94,7 @@ typedef struct circle_t	{
 
 	int type;
 } circle_t;
-typedef struct triangle_t {
+typedef struct ap_triangle_t {
 
 	AP opp;
 	AP adj;
@@ -105,9 +105,9 @@ typedef struct triangle_t {
 	Angle* opp_adj_angle;
 
 	int type; // isoscoles, equilateral, rightangle
-} triangle_t;
+} ap_triangle_t;
 #define Circle struct circle_t
-#define Triangle struct triangle_t
+#define APTriangle struct ap_triangle_t
 
 
 

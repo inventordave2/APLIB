@@ -4,6 +4,8 @@
 #ifndef LEAN_STRING_H
 #define LEAN_STRING_H
 
+#include <stdlib.h>
+
 /* These 3 varchar defines are not yet utilized. */
 #define glyph char
 #define u_string glyph*
@@ -222,7 +224,7 @@ static unsigned int base2_native_shift( unsigned int size )  {
 
 static int lean_atoi( char* a )    {
 
-	if( a==(char*)NULL )
+	if( a==(char*)0 )
 		return 0;
 
 	short len_a = lean_strlen( a );
@@ -387,7 +389,6 @@ static void shift_left_leading_zeroes( char* A )	{
 	if( A == copy_ptr )
 		return;
 
-
 	do	{
 
 		*copy_ptr = *A;
@@ -443,7 +444,7 @@ static char* lean_strtouppercase( char* in ) {
 }
 static unsigned long long lean_strlen( char* str )	{
 
-	if( str==NULL )
+	if( str==(char*)0 )
 		return (unsigned long long) 0;
 
 	unsigned long long x = 0;
@@ -458,7 +459,7 @@ static unsigned long long lean_strlen( char* str )	{
 }
 static unsigned lean_strcmp( char* s1, char* s2)	{
 
-	if( s1==(char*)NULL || s2==(char*)NULL )
+	if( s1==(char*)0 || s2==(char*)0 )
 		return 0;
 
 	while( *s1 || *s2 )	{
@@ -496,7 +497,7 @@ static void lean_strcpy( char* in, char* from )	{
 }
 static void lean_strcat( char* str1, char* str2 )	{
 
-	if( str1==(char*)NULL || str2==(char*)NULL )
+	if( str1==(char*)0 || str2==(char*)0 )
 		return;
 
 

@@ -89,9 +89,14 @@ char* IEEE_readDouble( double f )	{
 }
 void IEEE_writeDouble(double* dest, char* str)	{
 	
-#include <assert.h>
 
-	assert( strlen(str)==(sizeof(double)*8) );
+
+	if( !(strlen(str)==(sizeof(double)*8)) )	{
+
+#include <stdio.h>
+		fprintf( stderr, "IEEE_writeDouble( double*, char* ) in file '%s' received a bad buffer, codeline %d.\n", __FILE__, __LINE__ );
+		return;
+	}
 	
 	char* mem = (char *)dest;
 	unsigned char bitmask;

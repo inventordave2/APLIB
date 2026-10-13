@@ -251,7 +251,7 @@ static char* PrettyPrintAP( AP A )    {
 static const char* FormatAP( AP A )  {
 
 	if( A==(AP)0 )
-		return A;
+		return (char*)0;
 		
 	char* _ = (char*) malloc( 1 + lean_strlen(A->wholepart) + 1 + lean_strlen(A->fractpart) + 1 );
 
@@ -297,7 +297,7 @@ static void swapsign( AP A );
 */
 static void ADD( AP A, AP B, AP C, Flags extra );
 static void SUB( AP A, AP B, AP C, Flags extra );
-static UL( AP A, AP B, AP C, Flags extra );
+static void MUL( AP A, AP B, AP C, Flags extra );
 
 // From below, the implementations for the operators are even more incomplete. Still testing iteratively.
 static void DIV( AP A, AP B, AP C, Flags extra );
@@ -373,28 +373,6 @@ static void FreeAP( AP A )  {
 	return;
 }
 
-/*
-The Newton's Method root approximation functions. Only 'ap sqroot(ap)' is exposed via the aplib_t interface.
-The others are used by the algorithm internally (by the core 'sqroot' function), they are implementation details that
-do not need to be directly-accessed by the User.
-*/
-static AP sqrt_f( AP A )	{
-
-	AP A_2 = (AP)0;
-	aplib->mul( A, A, A_2, (int*)0 );
-	AP A2x2 = (AP)0;
-	aplib->sub( A_2, AP2, A2x2, (int*)0 );
-
-	aplib->FreeAP( A_2 );
-	return A2x2;
-}
-static AP sqrt_deriv_f( AP A )	{
-
-	AP R;
-	NULLAP(R);
-	aplib->mul( A,AP2,R,0 );
-	return R;
-}
 
 static int cmpap( AP A, AP B, AP C, Flags extra )   {
 
@@ -463,57 +441,6 @@ static uint64_t max( uint64_t a, uint64_t b ) {
         return a;
     
     return b;
-}
-static void _Root_( AP A, AP B, AP C, Flags extra )	{
-
-	AP x0 = BlankAP();
-	
-	DIV( A,AP2, x0, extra );
-
-	AP epsilon = aplib->QuickAP( "0.0000000001" );
-	AP tolerance = aplib->QuickAP( "0.000001" );
-
-	uint32_t max_iterations = 20;
-
-	AP y  = aplib->BlankAP();
-	AP yprime = aplib->BlankAP();
-	AP x1 = aplib->BlankAP();
-	AP x1_b = aplib->BlankAP();
-	AP x1_c = aplib->BlankAP();
-    AP R  = aplib->BlankAP();
-    
-	while( max_iterations-- )	{
-
-		y = sqrt_f( x0 );
-		yprime = sqrt_deriv_f( x0 );
-
-		if( aplib->cmpap( yprime, epsilon, R, (int*)0 ) < 0 )
-			break;
-
-		DIV( y,yprime, x1, extra );
-		SUB( x0,x1, x1_b, extra );
-		SUB( x1_b,x0, x1_c, extra );
-
-		aplib->FreeAP( x0 );
-		aplib->FreeAP( x1 );
-		aplib->FreeAP( x1_b );
-		aplib->FreeAP( y );
-		aplib->FreeAP( yprime );
-
-		AP r = (AP)0;
-		if( ( aplib->cmpap( x1_c,tolerance, r, (int*)0 ) < 1 ) )  {
-
-			*C = *x1_c;
-			break;
-		}
-
-
-		*x0 = *x1_c;
-		aplib->FreeAP( x1_c );
-	}
-
-	*C = *AP0;
-	return;
 }
 
 /* Operator function implementations.
@@ -1071,7 +998,6 @@ static void SUB( AP A, AP B, AP C, Flags extra ) {
 	return;
 }
 
-
 static void SUB_old( AP A, AP B, AP C, Flags extra ) {
 
 	char* Awp = A->wholepart;
@@ -1115,7 +1041,7 @@ static void SUB_old( AP A, AP B, AP C, Flags extra ) {
 
 	signed char r = '0';
 
-SUBloop:
+	SUBloop:
 
 	if( a0 )
 		a = '0';
@@ -1401,7 +1327,7 @@ static void BXN( AP A, AP B, AP C, Flags extra ) {
 
     AP swap = (AP)malloc( sizeof( struct ap) );
 
-bxn_loop:
+	bxn_loop:
 
 	ADD( APR1,B,APR2,extra );
 
@@ -1622,7 +1548,7 @@ static void LOGb( AP A, AP B, AP C, Flags extra )	{
 	The 2nd stage is to additivily accumulate all the n-roots 1/n radix values
 	for the denominator 'n', and produce a decimal LOG(x) value.
 	*/
-AP max_denom = aplib->CopyAP( N, extra );
+	AP max_denom = aplib->CopyAP( N, extra );
 	AP rational_numerator = aplib->CopyAP( AP0, extra );
 
 	AP d;
@@ -1714,7 +1640,6 @@ static void swapsign( AP A )    {
 }
 
 
-
 static unsigned char aplib_initialised = 0;
 void InitAPLIB()    {
 
@@ -1797,4 +1722,26 @@ static void FreeAllConstants( ) {
 
 	return;
 }
+
+AP e; // Euler's Constant.
+AP GR; // The "Golden Ratio".
+AP FGC; // The "Fine-Grain Constant." ( ~ 1/137 )
+AP AP0;
+AP AP1;
+AP AP2;
+AP AP3;
+AP AP10;
+AP AP16;
+AP AP1_2;
+AP AP1_3;
+AP AP1_4;
+AP AP1_5;
+AP AP3_4;
+AP AP4_5;
+AP AP2_3;
+AP AP1_7;
+AP AP2_7;
+AP AP22_7;
+AP AP_PI;
+
 
