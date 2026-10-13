@@ -9,6 +9,37 @@
 #include "./tools.h"
 #include "./tests.h"
 
+
+
+/*
+extern double sine( double x, int terms );
+extern double cosine( double x, int terms );
+
+extern double tangent( double sine_, double cos_ );
+extern double tangent_alt( double angle_in_radians, int precision );
+
+extern double angle( double tan_ );
+*/
+void trig_fnc_tests( double angle_in_radians )	{
+
+		printf( "Stdlib sin(x) generates %lf for angle %lf.\n", sin(angle_in_radians), angle_in_radians );
+		printf( "Davelib sine(x) generates %lf for angle %lf.\n", sine( angle_in_radians, 20 ), angle_in_radians );
+		printf( "\n" );
+
+		printf( "Stdlib cos(x) generates %lf for angle %lf.\n", cos(angle_in_radians), angle_in_radians );
+		printf( "Davelib cos(x) generates %lf for angle %lf.\n" cosine(angle_in_radians), angle_in_radians );
+		printf( "\n" );
+
+		printf( "Stdlib tan(x) generates %lf for angle %lf.\n", tan(angle_in_radians), angle_in_radians );
+		printf( "Davelib tangent(x) generates %lf for angle %lf.\n", tangent(angle_in_radians), angle_in_radians );
+		printf( "\n" );
+
+		printf( "Davelib angle( tangent(x) ) generates %lf, which should match %lf.\n", angle( tangent(angle_in_radians) ), angle_in_radians );
+
+		exit(0);
+}
+
+
 void tangent_test( double a, int p )  {
     
     double r = tangent( a, p );
