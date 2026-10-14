@@ -5,7 +5,7 @@
 #include "rb_core.h"
 
 void rb_buffer_init(rb_buffer* b, char* data, size_t len) {
-    if( b == NULL )
+    if( b == (void*)0 )
         return;
 
     b->data = data;
@@ -14,21 +14,21 @@ void rb_buffer_init(rb_buffer* b, char* data, size_t len) {
 }
 
 void rb_buffer_reset(rb_buffer* b) {
-    if( b == NULL )
+    if( b == (void*)0 )
         return;
 
-    b->data = NULL;
+    b->data = (void*)0;
     b->len = 0;
     b->used = 0;
 }
 
 void rb_buffer_release(rb_buffer* b) {
-    if( b == NULL )
+    if( b == (void*)0 )
         return;
 
-    if( b->data != NULL ) {
+    if( b->data != (void*)0 ) {
         rb_free(b->data);
-        b->data = NULL;
+        b->data = (void*)0;
     }
 
     b->len = 0;
@@ -39,16 +39,16 @@ rb_status rb_buffer_from_text(rb_buffer* b, const char* text) {
     size_t len;
     char* copy;
 
-    if( b == NULL )
+    if( b == (void*)0 )
         return RB_ERR_NULL;
 
     rb_buffer_reset(b);
-    if( text == NULL )
+    if( text == (void*)0 )
         return RB_ERR_BAD_INPUT;
 
     len = strlen(text);
     copy = (char*)rb_alloc(len + 1);
-    if( copy == NULL )
+    if( copy == (void*)0 )
         return RB_ERR_ALLOC;
 
     memcpy(copy, text, len + 1);
@@ -59,10 +59,10 @@ rb_status rb_buffer_from_text(rb_buffer* b, const char* text) {
 }
 
 rb_status rb_buffer_from_ap(const rb_ap_ptr a, rb_buffer* out) {
-    char* text = NULL;
+    char* text = (void*)0;
     rb_status st;
 
-    if( out == NULL )
+    if( out == (void*)0 )
         return RB_ERR_NULL;
 
     rb_buffer_reset(out);
@@ -77,7 +77,7 @@ rb_status rb_buffer_from_ap(const rb_ap_ptr a, rb_buffer* out) {
 }
 
 char rb_buffer_peek(const rb_buffer* b) {
-    if( b == NULL || b->data == NULL || b->used == 0 )
+    if( b == (void*)0 || b->data == (void*)0 || b->used == 0 )
         return '\0';
 
     return b->data[0];
@@ -86,7 +86,7 @@ char rb_buffer_peek(const rb_buffer* b) {
 char rb_buffer_consume(rb_buffer* b) {
     char c = '\0';
 
-    if( b == NULL || b->data == NULL || b->used == 0 )
+    if( b == (void*)0 || b->data == (void*)0 || b->used == 0 )
         return '\0';
 
     c = b->data[0];
@@ -103,16 +103,16 @@ rb_status rb_buffer_append(rb_buffer* b, const char* text) {
     size_t new_len;
     char* new_data;
 
-    if( b == NULL || text == NULL )
+    if( b == (void*)0 || text == (void*)0 )
         return RB_ERR_NULL;
 
     text_len = strlen(text);
     if( text_len == 0 )
         return RB_OK;
 
-    if( b->data == NULL ) {
+    if( b->data == (void*)0 ) {
         new_data = (char*)rb_alloc(text_len + 1);
-        if( new_data == NULL )
+        if( new_data == (void*)0 )
             return RB_ERR_ALLOC;
 
         memcpy(new_data, text, text_len + 1);
@@ -124,7 +124,7 @@ rb_status rb_buffer_append(rb_buffer* b, const char* text) {
 
     new_len = b->used + text_len;
     new_data = (char*)rb_alloc(new_len + 1);
-    if( new_data == NULL )
+    if( new_data == (void*)0 )
         return RB_ERR_ALLOC;
 
     memcpy(new_data, b->data, b->used);
@@ -139,7 +139,7 @@ rb_status rb_buffer_append(rb_buffer* b, const char* text) {
 rb_status rb_buffer_append_char(rb_buffer* b, char c) {
     char s[2];
 
-    if( b == NULL )
+    if( b == (void*)0 )
         return RB_ERR_NULL;
 
     s[0] = c;

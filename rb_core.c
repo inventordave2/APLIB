@@ -4,9 +4,9 @@
 
 #include "rb_core.h"
 
-static void* (*rb_alloc_fn)(size_t) = NULL;
-static void* (*rb_calloc_fn)(size_t, size_t) = NULL;
-static void (*rb_free_fn)(void*) = NULL;
+static void* (*rb_alloc_fn)(size_t) = (void* (*)(size_t))0;
+static void* (*rb_calloc_fn)(size_t, size_t) = (void* (*)(size_t, size_t))0;
+static void (*rb_free_fn)(void*) = (void (*)(void*))0;
 
 static void* rb_default_alloc(size_t nbytes) {
     return malloc(nbytes);
@@ -21,11 +21,11 @@ static void rb_default_free(void* ptr) {
 }
 
 static void rb_runtime_init(void) {
-    if( rb_alloc_fn == NULL )
+    if( rb_alloc_fn == (void* (*)(size_t))0 )
         rb_alloc_fn = rb_default_alloc;
-    if( rb_calloc_fn == NULL )
+    if( rb_calloc_fn == (void* (*)(size_t, size_t))0 )
         rb_calloc_fn = rb_default_calloc;
-    if( rb_free_fn == NULL )
+    if( rb_free_fn == (void (*)(void*))0 )
         rb_free_fn = rb_default_free;
 }
 
@@ -50,7 +50,7 @@ void* rb_calloc(size_t count, size_t size) {
 }
 
 void rb_free(void* ptr) {
-    if( ptr == NULL )
+    if( ptr == (void*)0 )
         return;
     rb_runtime_init();
     rb_free_fn(ptr);
@@ -60,13 +60,13 @@ static char* rb_strdup_text(const char* s) {
     size_t len;
     char* out;
 
-    if( s == NULL )
-        return NULL;
+    if( s == (void*)0 )
+        return (void*)0;
 
     len = strlen(s);
     out = (char*)rb_alloc(len + 1);
-    if( out == NULL )
-        return NULL;
+    if( out == (void*)0 )
+        return (void*)0;
 
     memcpy(out, s, len + 1);
     return out;
@@ -75,12 +75,12 @@ static char* rb_strdup_text(const char* s) {
 static char* rb_strdup_range(const char* s, size_t len) {
     char* out;
 
-    if( s == NULL )
-        return NULL;
+    if( s == (void*)0 )
+        return (void*)0;
 
     out = (char*)rb_alloc(len + 1);
-    if( out == NULL )
-        return NULL;
+    if( out == (void*)0 )
+        return (void*)0;
 
     memcpy(out, s, len);
     out[len] = '\0';
@@ -93,8 +93,8 @@ static int rb_is_digit(char c) {
 
 rb_ap_ptr rb_ap_new_empty(void) {
     rb_ap_ptr ap = (rb_ap_ptr)rb_calloc(1, sizeof(rb_ap));
-    if( ap == NULL )
-        return NULL;
+    if( ap == (void*)0 )
+        return (void*)0;
 
     ap->whole = rb_strdup_text("0");
     ap->frac = rb_strdup_text("0");
@@ -104,9 +104,9 @@ rb_ap_ptr rb_ap_new_empty(void) {
     ap->prec = 0;
     ap->desc = rb_strdup_text("rb_ap");
 
-    if( ap->whole == NULL || ap->frac == NULL || ap->desc == NULL ) {
+    if( ap->whole == (void*)0 || ap->frac == (void*)0 || ap->desc == (void*)0 ) {
         rb_ap_free(ap);
-        return NULL;
+        return (void*)0;
     }
 
     return ap;
@@ -117,7 +117,7 @@ static void rb_trim_leading_zeroes(char** text) {
     char* q;
     size_t len;
 
-    if( text == NULL || *text == NULL )
+    if( text == (void*)0 || *text == (void*)0 )
         return;
 
     p = *text;
@@ -149,12 +149,12 @@ rb_ap_ptr rb_ap_new_from_text(const char* text) {
     int saw_dot = 0;
     int negative = 0;
 
-    if( text == NULL )
-        return NULL;
+    if( text == (void*)0 )
+        return (void*)0;
 
     ap = rb_ap_new_empty();
-    if( ap == NULL )
-        return NULL;
+    if( ap == (void*)0 )
+        return (void*)0;
 
     p = text;
     while( *p == ' ' || *p == '\t' || *p == '\n' || *p == '\r' )
@@ -167,22 +167,22 @@ rb_ap_ptr rb_ap_new_from_text(const char* text) {
         ++p;
     }
 
-    whole = NULL;
-    frac = NULL;
+    whole = (void*)0;
+    frac = (void*)0;
     end = p;
     while( *end != '\0' && *end != '.' ) {
         if( rb_is_digit(*end) )
             saw_digit = 1;
         else if( *end != ' ' && *end != '\t' && *end != '\n' && *end != '\r' ) {
             rb_ap_free(ap);
-            return NULL;
+            return (void*)0;
         }
         ++end;
     }
 
     if( saw_digit == 0 && *p == '\0' ) {
         rb_ap_free(ap);
-        return NULL;
+        return (void*)0;
     }
 
     whole_len = (size_t)(end - p);
@@ -191,9 +191,9 @@ rb_ap_ptr rb_ap_new_from_text(const char* text) {
     else
         whole = rb_strdup_text("0");
 
-    if( whole == NULL ) {
+    if( whole == (void*)0 ) {
         rb_ap_free(ap);
-        return NULL;
+        return (void*)0;
     }
 
     rb_trim_leading_zeroes(&whole);
@@ -208,7 +208,7 @@ rb_ap_ptr rb_ap_new_from_text(const char* text) {
             else if( *end != ' ' && *end != '\t' && *end != '\n' && *end != '\r' ) {
                 rb_free(whole);
                 rb_ap_free(ap);
-                return NULL;
+                return (void*)0;
             }
             ++end;
         }
@@ -219,10 +219,10 @@ rb_ap_ptr rb_ap_new_from_text(const char* text) {
         else
             frac = rb_strdup_text("0");
 
-        if( frac == NULL ) {
+        if( frac == (void*)0 ) {
             rb_free(whole);
             rb_ap_free(ap);
-            return NULL;
+            return (void*)0;
         }
 
         while( *frac == '0' ) {
@@ -241,10 +241,10 @@ rb_ap_ptr rb_ap_new_from_text(const char* text) {
         frac = rb_strdup_text("0");
     }
 
-    if( frac == NULL ) {
+    if( frac == (void*)0 ) {
         rb_free(whole);
         rb_ap_free(ap);
-        return NULL;
+        return (void*)0;
     }
 
     if( negative )
@@ -261,9 +261,9 @@ rb_ap_ptr rb_ap_new_from_text(const char* text) {
     ap->prec = (rb_prec_t)strlen(frac);
     ap->desc = rb_strdup_text("rb_ap");
 
-    if( ap->desc == NULL ) {
+    if( ap->desc == (void*)0 ) {
         rb_ap_free(ap);
-        return NULL;
+        return (void*)0;
     }
 
     return ap;
@@ -272,12 +272,12 @@ rb_ap_ptr rb_ap_new_from_text(const char* text) {
 rb_ap_ptr rb_ap_copy(const rb_ap_ptr a) {
     rb_ap_ptr out;
 
-    if( a == NULL )
-        return NULL;
+    if( a == (void*)0 )
+        return (void*)0;
 
     out = rb_ap_new_empty();
-    if( out == NULL )
-        return NULL;
+    if( out == (void*)0 )
+        return (void*)0;
 
     rb_free(out->whole);
     rb_free(out->frac);
@@ -294,7 +294,7 @@ rb_ap_ptr rb_ap_copy(const rb_ap_ptr a) {
 }
 
 void rb_ap_free(rb_ap_ptr a) {
-    if( a == NULL )
+    if( a == (void*)0 )
         return;
 
     rb_free(a->whole);
@@ -304,19 +304,19 @@ void rb_ap_free(rb_ap_ptr a) {
 }
 
 void rb_ap_set_base(rb_ap_ptr a, int base) {
-    if( a == NULL )
+    if( a == (void*)0 )
         return;
     a->base = base;
 }
 
 void rb_ap_set_prec(rb_ap_ptr a, rb_prec_t prec) {
-    if( a == NULL )
+    if( a == (void*)0 )
         return;
     a->prec = prec;
 }
 
 void rb_ap_set_sign(rb_ap_ptr a, char sign) {
-    if( a == NULL )
+    if( a == (void*)0 )
         return;
     if( sign == '-' || sign == '+' )
         a->sign = sign;
@@ -325,15 +325,15 @@ void rb_ap_set_sign(rb_ap_ptr a, char sign) {
 rb_status rb_parse_text(const char* text, rb_ap_ptr* out) {
     rb_ap_ptr ap;
 
-    if( out == NULL )
+    if( out == (void*)0 )
         return RB_ERR_NULL;
 
-    *out = NULL;
-    if( text == NULL )
+    *out = (void*)0;
+    if( text == (void*)0 )
         return RB_ERR_BAD_INPUT;
 
     ap = rb_ap_new_from_text(text);
-    if( ap == NULL )
+    if( ap == (void*)0 )
         return RB_ERR_BAD_INPUT;
 
     *out = ap;
@@ -345,16 +345,16 @@ rb_status rb_parse_buffer(rb_buffer* in, rb_ap_ptr* out) {
     size_t len;
     rb_status status;
 
-    if( in == NULL || out == NULL )
+    if( in == (void*)0 || out == (void*)0 )
         return RB_ERR_NULL;
 
-    *out = NULL;
-    if( in->data == NULL || in->len == 0 )
+    *out = (void*)0;
+    if( in->data == (void*)0 || in->len == 0 )
         return RB_ERR_BAD_INPUT;
 
     len = in->len;
     tmp = (char*)rb_alloc(len + 1);
-    if( tmp == NULL )
+    if( tmp == (void*)0 )
         return RB_ERR_ALLOC;
 
     memcpy(tmp, in->data, len);
@@ -369,19 +369,19 @@ rb_status rb_ap_to_text(const rb_ap_ptr a, char** out_text) {
     size_t len;
     char* out;
 
-    if( out_text == NULL )
+    if( out_text == (void*)0 )
         return RB_ERR_NULL;
 
-    *out_text = NULL;
-    if( a == NULL )
+    *out_text = (void*)0;
+    if( a == (void*)0 )
         return RB_ERR_NULL;
 
     len = strlen(a->whole ? a->whole : "0") + strlen(a->frac ? a->frac : "0") + 4;
     out = (char*)rb_alloc(len + 1);
-    if( out == NULL )
+    if( out == (void*)0 )
         return RB_ERR_ALLOC;
 
-    if( a->frac != NULL && strcmp(a->frac, "0") != 0 ) {
+    if( a->frac != (void*)0 && strcmp(a->frac, "0") != 0 ) {
         snprintf(out, len + 1, "%c%s.%s", a->sign, a->whole ? a->whole : "0", a->frac ? a->frac : "0");
     } else {
         snprintf(out, len + 1, "%c%s", a->sign, a->whole ? a->whole : "0");
@@ -392,13 +392,13 @@ rb_status rb_ap_to_text(const rb_ap_ptr a, char** out_text) {
 }
 
 rb_status rb_ap_to_buffer(const rb_ap_ptr a, rb_buffer* out) {
-    char* text = NULL;
+    char* text = (void*)0;
     rb_status st;
 
-    if( out == NULL )
+    if( out == (void*)0 )
         return RB_ERR_NULL;
 
-    out->data = NULL;
+    out->data = (void*)0;
     out->len = 0;
     out->used = 0;
 
@@ -419,11 +419,11 @@ int rb_ap_cmp(const rb_ap_ptr a, const rb_ap_ptr b) {
     const char* b_frac;
     int cmp;
 
-    if( a == NULL && b == NULL )
+    if( a == (void*)0 && b == (void*)0 )
         return 0;
-    if( a == NULL )
+    if( a == (void*)0 )
         return -1;
-    if( b == NULL )
+    if( b == (void*)0 )
         return 1;
 
     a_whole = a->whole ? a->whole : "0";

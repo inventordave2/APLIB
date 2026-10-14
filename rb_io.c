@@ -11,34 +11,34 @@ rb_status rb_io_load_argc_argv(int argc, char** argv, rb_buffer* out) {
     char* data;
     char* cursor;
 
-    if( out == NULL )
+    if( out == (void*)0 )
         return RB_ERR_NULL;
 
     rb_buffer_reset(out);
 
-    if( argv == NULL )
+    if( argv == (void*)0 )
         return RB_ERR_BAD_INPUT;
 
     for( i = 0; i < argc; ++i ) {
-        if( argv[i] != NULL )
+        if( argv[i] != (void*)0 )
             total += strlen(argv[i]) + 1;
     }
 
     if( total == 0 ) {
-        out->data = NULL;
+        out->data = (void*)0;
         out->len = 0;
         out->used = 0;
         return RB_OK;
     }
 
     data = (char*)rb_alloc(total + 1);
-    if( data == NULL )
+    if( data == (void*)0 )
         return RB_ERR_ALLOC;
 
     cursor = data;
     for( i = 0; i < argc; ++i ) {
         size_t len;
-        if( argv[i] == NULL )
+        if( argv[i] == (void*)0 )
             continue;
         len = strlen(argv[i]);
         memcpy(cursor, argv[i], len);
@@ -62,15 +62,15 @@ rb_status rb_io_read_file(const char* path, rb_buffer* out) {
     char* data;
     size_t read_count;
 
-    if( out == NULL )
+    if( out == (void*)0 )
         return RB_ERR_NULL;
 
     rb_buffer_reset(out);
-    if( path == NULL )
+    if( path == (void*)0 )
         return RB_ERR_BAD_INPUT;
 
     fp = fopen(path, "rb");
-    if( fp == NULL )
+    if( fp == (void*)0 )
         return RB_ERR_BAD_INPUT;
 
     if( fseek(fp, 0, SEEK_END) != 0 ) {
@@ -86,7 +86,7 @@ rb_status rb_io_read_file(const char* path, rb_buffer* out) {
 
     rewind(fp);
     data = (char*)rb_alloc((size_t)sz + 1);
-    if( data == NULL ) {
+    if( data == (void*)0 ) {
         fclose(fp);
         return RB_ERR_ALLOC;
     }
@@ -108,10 +108,10 @@ rb_status rb_io_read_file(const char* path, rb_buffer* out) {
 
 rb_status rb_io_write_file(const char* path, const rb_ap_ptr a) {
     FILE* fp;
-    char* text = NULL;
+    char* text = (void*)0;
     rb_status st;
 
-    if( path == NULL || a == NULL )
+    if( path == (void*)0 || a == (void*)0 )
         return RB_ERR_NULL;
 
     st = rb_ap_to_text(a, &text);
@@ -119,12 +119,12 @@ rb_status rb_io_write_file(const char* path, const rb_ap_ptr a) {
         return st;
 
     fp = fopen(path, "wb");
-    if( fp == NULL ) {
+    if( fp == (void*)0 ) {
         rb_free(text);
         return RB_ERR_BAD_INPUT;
     }
 
-    if( text != NULL ) {
+    if( text != (void*)0 ) {
         fwrite(text, 1, strlen(text), fp);
     }
 
