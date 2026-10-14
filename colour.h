@@ -1,7 +1,7 @@
 #ifndef DAVELIB_COLOUR
 #define DAVELIB_COLOUR
 
-#include <stdint.h>
+
 #include <stdarg.h>
 #include "./lean_string.h"
 
@@ -14,27 +14,27 @@ typedef struct Colour	{
 
 	const char* desc;
 
-	short colourMode;
-	const short codeAlign: 8; /* A fixed width for any of the control code strings.
+	char colourMode;
+	const char codeAlign: 8; /* A fixed width for any of the control code strings.
 								With ANSIVT100, for simple usage, a length of 8 (bytes/chars unpacked) suffices. */
 
-	short R;
-	short G;
-	short B;
-	short A;
-	short RGBA[4];
+	unsigned char R;
+	unsigned char G;
+	unsigned char B;
+	unsigned char A;
+	unsigned char RGBA[4];
 	const char** codes;
 
 	const unsigned (*resetAnsiVtCodes)(unsigned f);
 
-	uint16_t NUMROWS;
-	uint16_t NUMCOLS;
-	uint16_t** screen; /* 2d (rows and columns) screen buffer */
-	uint16_t x; /* column */
-	uint16_t y; /* row    */
+	int NUMROWS;
+	int NUMCOLS;
+	int** screen; /* 2d (rows and columns) screen buffer */
+	int x; /* column */
+	int y; /* row    */
 	
-	uint16_t codepage; /* Such as UTF8, UCS4, ASCII, etc. */
-	short mode; /* charmode = 1, bitmapmode = 2, unverified = 0 */
+	int codepage; /* Such as UTF8, UCS4, ASCII, etc. */
+	char mode; /* charmode = 1, bitmapmode = 2, unverified = 0 */
 
 	int (*print)( char* );
     int (*printf)( char*, ... );
@@ -67,12 +67,12 @@ Must be called before the Colour Interface can be used, as the Init function ini
 */
 void InitColour();
 void DeInitColour();
+
 /*
 These are global copies of the strings representing the ANSI/VT control code sequences.
 Populated after InitColor() has been called, and optionally accessible as globals,
 they can also be accessed via the Interface colour.codes[] Array.
 */
-
 char* FG_BLACK;
 char* FG_RED;
 char* FG_GREEN;
@@ -124,13 +124,9 @@ char* DEL;
 
 #endif
 
-
-// ................
-
 // COLOUR_C
 
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -148,7 +144,7 @@ void InitColour();
 void DeInitColour();
 
 
-static uint8_t colourlib_initialised = 0;
+static char colourlib_initialised = 0;
 static void InitColourI();
 
 static char* fmt( char* in );
@@ -160,52 +156,33 @@ static void bg( uint8_t cc );
 static void fg( uint8_t cc );
 static void bold();
 
-unsigned _black_;
-unsigned _red_;
-unsigned _green_;
-unsigned _blue_;
-unsigned _yellow_;
-unsigned _magenta_;
-unsigned _cyan_;
-unsigned _white_;
-unsigned _bright_;
-unsigned _reset_;
+unsigned int _black_;
+unsigned int _red_;
+unsigned int _green_;
+unsigned int _blue_;
+unsigned int _yellow_;
+unsigned int _magenta_;
+unsigned int _cyan_;
+unsigned int _white_;
+unsigned int _bright_;
+unsigned int _reset_;
 
 static char** codes;
 
-char* fnc;
-char* ob;
-char* cb;
-char* eqs;
-char* space;
 
-char* LVALNUMBER;
-char* RVALNUMBER;
-char* FNCNAME;
-char* ROUNDBRACKET;
-char* EQUALSOPERATOR;
-char* NBWS;
+static char desc[] = "COLOUR_C comes to you courtesy of Inventor Dave, his primary co-hort the Emeritus Lab Assistant Mopsey Wowbagger, \
+the historical ANSI specification committee, and an iron-clad personal commitment by Dave (that's me, but my mates call me \"The Dizzle\", so, y'know, \
+it's only polite...) to free noobs and code-kiddies like you losers from the Atlantean shackles of technical debt. \
+All of the important subsystems you could want to be wrapped, friction-free, in a plug-in architecture, for any C application project \
+your puny mortal minds could possibly envisage, let alone successfully implement, across multiple target architectures (Windows, and Linux. Tbf, \
+it's just like, those two, and that's it, but you've gotta keep the energy up).\n(c)\tInventor Dave\n   \t1,000,000 b.c.\n\nOh, and \
+WELCOME, TO THE WORLD OF TOMORROW!!!\n";
 
-char* RAINBOW;
-
-char* LVALUE;
-char* RVALUE;
-char* FN;
-char* OB;
-char* CB;
-char* EQS;
-char* SPACE;
-
-char* gaza;
-char* GAZA;
-
-static char desc[] = "COLOUR_C comes to you courtesy of Inventor Dave, his primary co-hort the Emeritus Lab Assistant Mopsey Wowbagger, the historical ANSI specification committee, and an iron-clad personal commitment by Dave (that's me, but my mates call me \"The Dizzle\", so, y'know, it's only polite...) to free noobs and code-kiddies like you losers from the Atlantean shackles of technical debt. All of the important subsystems you could want to be wrapped, friction-free, in a plug-in architecture, for any C application project your puny mortal minds could possibly envisage, let alone successfully implement, across multiple target architectures (Windows, and Linux. Tbf, it's just like, those two, and that's it, but you've gotta keep the energy up).\n(c)\tInventor Dave\n   \t1,000,000 b.c.\n\nOh, and WELCOME, TO THE WORLD OF TOMORROW!!!\n";
-
-
+void lean_memcpy( void* dest, void* src, int size );
 
 static char* setCodePage( char* );
 static const char* getCodePage( );
-static const unsigned resetAnsiVtCodes(unsigned f);
+static const unsigned int resetAnsiVtCodes(unsigned f);
 static char* reset();
 
 static int print( char* );
@@ -232,9 +209,7 @@ static int seek_modifiers( char* arr1, char cm )    {
             ++arr1;
 
     return 0;
-
 }
-
 
 static int count_modifiers( char* _ ) {
  
@@ -266,29 +241,21 @@ static int count_modifiers( char* _ ) {
 
 #define convert_arg_to_cstr( Type, v, buf ) lean_substring( buf, (char*)&v, 0, sizeof( Type ) )
 
-static int colour_print_hook( char* buff_in )   {
+static void colour_print_hook( char* buff_in )   {
     
     char* fmtd = colour->fmt( buff_in );
     printf( fmtd );
     free( fmtd );
     
-    return 1;
+    return;
 }
 
-static int colour_fprintf_hook( FILE* file_h, char* buff_in, ... ) {
+#ifdef EXPECT_CSTDLIB
 
-	int num_modifiers = count_modifiers(buff_in);
 
-	va_list args_;
-	
-	char* args_buf_copy = (char*)malloc( sizeof(va_list) );
-	memcpy( args_buf_copy, &args_, sizeof(va_list) );
 
-	return _printf( file_h, args_buf_copy, num_modifiers, buff_in );
+#endif
 
-}
-
-void lean_memcpy( void* dest, void* src, int size );
 
 static int _printf( FILE* file_h, char* args, int num_modifiers, char* buff_in )	{
     /*
@@ -314,7 +281,6 @@ static int _printf( FILE* file_h, char* args, int num_modifiers, char* buff_in )
 				c_[0] = '\\';
 				lean_strcat( _,c_ );
 				continue;
-
 			}
        		else  {
 
@@ -385,9 +351,11 @@ static void bg( uint8_t cc ) { return; }
 static void fg( uint8_t cc ) { return; }
 static void bold() { return; }
 
-
 #ifdef EXPECT_CSTDLIB
 // DECLS AND DEFS FOR FUNCTIONS THAT WOULD NEED THE CSTDLIB (beyond <stdio.h>) TO BE LINKED
+
+#include <stdarg.h>
+#include <time.h>
 
 static int colour_printf_hook( char* buff_in, ... );
 static void selectRandomColourString( char* buf );
@@ -404,9 +372,21 @@ static int colour_printf_hook( char* buff_in, ... ) {
 
 }
 
+static int colour_fprintf_hook( FILE* file_h, char* buff_in, ... ) {
+
+	int num_modifiers = count_modifiers(buff_in);
+
+	va_list args_;
+	
+	char* args_buf_copy = (char*)malloc( sizeof(va_list) );
+	lean_memcpy( args_buf_copy, &args_, sizeof(va_list) );
+
+	return _printf( file_h, args_buf_copy, num_modifiers, buff_in );
+}
+
 static void selectRandomColourString( char* buf )  {
     
-#include<time.h>
+
     srand(time(NULL));
     short rnd_num = (short)(rand() % 8);
     char* selection = (char*)0;
@@ -466,7 +446,6 @@ static char* wrap( char* str, char* opt )	{
 	int len;
 	char* _;
 	
-	#include <string.h>
 	if( lean_strcmp(opt,RAINBOW) )	{
 		
 		// Rainbow mode.
@@ -484,15 +463,14 @@ static char* wrap( char* str, char* opt )	{
 			cstr[0] = str[x++];
 			
 ;
-			strcat( _, "[" );
-			strcat( _, opt );
-			strcat( _, "]" );
-			strcat( _, cstr );
-			//strcat( _, "[reset]" );
+			lean_strcat( _, "[" );
+			lean_strcat( _, opt );
+			lean_strcat( _, "]" );
+			lean_strcat( _, cstr );
+			//lean_strcat( _, "[reset]" );
 
 			free( opt );
 		}
-		
 	}
 	else	{
 		
@@ -505,86 +483,41 @@ static char* wrap( char* str, char* opt )	{
 		strcat( _, "]" );
 		strcat( _, str );
 		strcat( _, "[reset]" );
-
 	}
 
 	return _;
 }
 
 
-#ifdef _EXAMPLES_
-void initTagSchema()	{
-
-	 fnc = strdup( "SQROOT" );
-	 ob = strdup( "(" );
-	 cb = strdup( ")" );
-	 eqs = strdup( "=" );
-	 space = strdup( " " );
-
-	 LVALNUMBER = strdup( "brightgreen" );
-	 RVALNUMBER = strdup( "brightyellow" );
-	 FNCNAME = strdup( "brightmagenta" );
-	 ROUNDBRACKET = strdup( "brightcyan" );
-	 EQUALSOPERATOR = strdup( "brightred" );
-	 NBWS = strdup( "reset" );
-
-	 RAINBOW = strdup( "rainbow" );
-
-	// LVALUE = colour->wrap( result_string, LVALNUMBER );
-    // RVALUE = colour->wrap( result_string, RVALNUMBER );
-	 FN = colour->wrap( fnc, FNCNAME );
-	 OB = colour->wrap( ob, ROUNDBRACKET );
-	 CB = colour->wrap( cb, ROUNDBRACKET );
-	 EQS = colour->wrap( eqs, EQUALSOPERATOR );
-	 SPACE = colour->wrap( space, NBWS );
-
-	 gaza = strdup( "MakeGazaANewLasVegas" );
-	 GAZA = colour->wrap( gaza, RAINBOW );
-
-	return;
-}
-
-
-#endif
-
-
 
 char* getColourCode( char* colour_str ) {
     
-    
+    char* _ = (char*)0;
+
+	return _;
 }
 
 /*
 Some Windows configs require a manual invocation of VT processing.
 */
-
-typedef void* HANDLE;
-static HANDLE StdHandle;
-
-#ifndef STD_OUTPUT_HANDLE
-#define STD_OUTPUT_HANDLE ((DWORD)-11)
-#endif
-#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
-#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
-#endif
 #ifdef _WIN32
 
 #include <windows.h>
 static int color_win32_vt;
 int win32_color()	{
 
-	StdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+	void* StdHandle = GetStdHandle( ((DWORD)-11) );
 	color_win32_vt = (int)SetConsoleMode(
 		StdHandle,
-		0x0001 | 0x0002 | ENABLE_VIRTUAL_TERMINAL_PROCESSING
+		0x0001 | 0x0002 | 0x0004
 	);
 
-	//fprintf( stderr, "ResponseCode(SetConsoleMode) := '%s'.\n", (color == 0 ? "FAIL" : "SUCCESS") );
 	if(color_win32_vt == 0)
 		fprintf( stderr, "ANSIVT mode could not be activated in this Win128 process.\n" );
 
-	return (int) color_win32_vt;	
+	return color_win32_vt;	
 }
+
 #endif
 
 
@@ -664,8 +597,6 @@ static char* get_ansivt_seq( char* str )	{
 void InitColour()	{
 	
 	InitColourI();
-	
-	initTagSchema();
 	return;
 }
 
@@ -684,7 +615,6 @@ static void InitColourI()	{
 
 	codes = (char**)calloc( COLOURLIB_CONTROL_CODES_ITINERARY_COUNT, sizeof(char*) );
 
-	char* codes_tray;
 	FG_BLACK = codes_tray;
 	FG_RED = codes_tray+16;
 	FG_GREEN = codes_tray+32;
@@ -778,14 +708,14 @@ char* get_static_msg_tray( int buf_size );
 
 static char* fmt( char* in )	{
 	
-	unsigned x = 0;
-	unsigned y = 0;
-	unsigned w = 0;
+	unsigned int x = 0;
+	unsigned int y = 0;
+	unsigned int w = 0;
 	
-	short escaped = 0;
+	unsigned char escaped = 0;
 	char c = 0;
 	char* out = get_static_msg_tray( 1024 );
-	short detected_seq = 0;
+	unsigned char detected_seq = 0;
 	char tbuf[2];
 	tbuf[1] = '\0';
 	char _[200] = { 0 };
@@ -815,14 +745,14 @@ static char* fmt( char* in )	{
 		
 		char** seq;
 		
-		unsigned z = 0;
+		unsigned int z = 0;
 
 		if( escaped )	{
 			
 			char t[2];
 			t[0] = c;
 			t[1] = '\0';
-			strcat( out, (char*)t );
+			lean_strcat( out, (char*)t );
 			escaped = 0;
 			continue;
 		}
@@ -896,7 +826,7 @@ static char* fmt( char* in )	{
 
 		if( z>0 )	{
 			
-			unsigned n = 0;
+			unsigned int n = 0;
 			// attach the seq[] array of char* control codes to the 'char* out' buffer.
 			while( n < z )
 				lean_strcat( out, seq[n++] );						
@@ -921,12 +851,12 @@ static char* fmt( char* in )	{
 /*
 static int colour_fprint( FILE* file_h, char* str )	{
 
-	if( str==NULL )
+	if( str==(char*)0 )
 		return 0;
 
 	char* _ = fmt( str );
 
-	if( _==NULL )
+	if( _==(char*)0 )
 		return 0;
 
 	fprintf( file_h, _ );
@@ -935,6 +865,7 @@ static int colour_fprint( FILE* file_h, char* str )	{
 	return 1;
 }
 */
+
 static const char* setcodevalues( int c, int v, ... )	{
 
 	char* _ = codes_tray+570;
@@ -950,7 +881,7 @@ static const char* setcodevalues( int c, int v, ... )	{
 	return (const char*) _;
 }
 
-static const unsigned resetAnsiVtCodes(unsigned f)	{
+static const unsigned int resetAnsiVtCodes(unsigned int f)	{
 	
 	if(f == 0)	{
 
@@ -1036,7 +967,7 @@ static const unsigned resetAnsiVtCodes(unsigned f)	{
 		strcpy((char*)ITALIC, ANSI_ISO_ESC "[" );
 	}
 	
-	unsigned x = 0;
+	unsigned int x = 0;
 
 	_black_ = x;
 	codes[x++] = FG_BLACK;
@@ -1093,19 +1024,19 @@ static const unsigned resetAnsiVtCodes(unsigned f)	{
 	_reset_ = x;
 	codes[x++] = NORMAL;
 	
-	unsigned y = x;
+	unsigned int y = x;
 	for( ; y < COLOUR_MAX_CODES_COUNT; y++ )
 		codes[y] = NULL;
 
 	if( f==0 )
 		x = 0;
 	
-	return ( (const unsigned) x );
+	return ( (const unsigned int) x );
 }
 
 static void swap4color( char* fg, char* bg )	{
 	
-	if( fg==NULL || lean_strlen(fg)==0 || lean_strcmp(fg,"0") )
+	if( (fg==(char*)0) || (lean_strlen(fg)==0) || (lean_strcmp(fg,"0")) )
 		goto _bg;
 	
 	if( lean_strcmp( fg, "black" ) )	{
@@ -1177,7 +1108,7 @@ static void swap4color( char* fg, char* bg )	{
 	
 	_bg:
 	
-	if( bg==(char*)0 || lean_strlen(bg)==0 || lean_strcmp( bg,"0") )	{
+	if( (bg==(char*)0) || (lean_strlen(bg)==0) || (lean_strcmp( bg,"0")) )	{
 	
 		return;
 	}
