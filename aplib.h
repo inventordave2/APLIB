@@ -26,7 +26,7 @@ typedef struct ap	{
 typedef struct ap ap_obj;
 typedef ap_obj* AP;
 
-typedef void (*aplib_operator)( AP A, AP B, AP C, Flags extra );
+typedef void (*aplib_operator)( AP A, AP B, AP* C, Flags extra );
 extern aplib_operator ops[ 256 ];
 extern aplib_operator operator;
 
@@ -54,31 +54,31 @@ typedef struct aplib_t {
 
 	int (*get_opcode)( char* );
 
-	void (*add)( AP A, AP B, AP C, Flags extra );
-	void (*sub)( AP A, AP B, AP C, Flags extra );
-	void (*mul)( AP A, AP B, AP C, Flags extra );
-	void (*divide)( AP A, AP B, AP C, Flags extra );
-	void (*bxn)( AP A, AP B, AP C, Flags extra );
-	void (*divby2)( AP A, AP C, Flags extra );
-	void (*reciprocal)( AP A, AP B, AP C, Flags extra );
+	void (*add)( AP A, AP B, AP* C, Flags extra );
+	void (*sub)( AP A, AP B, AP* C, Flags extra );
+	void (*mul)( AP A, AP B, AP* C, Flags extra );
+	void (*divide)( AP A, AP B, AP* C, Flags extra );
+	void (*bxn)( AP A, AP B, AP* C, Flags extra );
+	void (*divby2)( AP A, AP* C, Flags extra );
+	void (*reciprocal)( AP A, AP B, AP* C, Flags extra );
 
-	void (*power)( AP A, AP B, AP C, Flags extra );
-	void (*root)( AP A, AP B, AP C, Flags extra );
+	void (*power)( AP A, AP B, AP* C, Flags extra );
+	void (*root)( AP A, AP B, AP* C, Flags extra );
 
-	void (*log10)( AP A, AP C, Flags extra );
-	void (*log2)( AP A, AP C, Flags extra );
-	void (*log16)( AP A, AP C, Flags extra );
-	void (*nlog)( AP A, AP C, Flags extra );
-	void (*logb)( AP A, AP B, AP C, Flags extra );
+	void (*log10)( AP A, AP* C, Flags extra );
+	void (*log2)( AP A, AP* C, Flags extra );
+	void (*log16)( AP A, AP* C, Flags extra );
+	void (*nlog)( AP A, AP* C, Flags extra );
+	void (*logb)( AP A, AP B, AP* C, Flags extra );
 
 	signed short (*cmpdigitstr)( char* dstr1, char* dstr2 );
-	signed short (*cmpap)( AP A, AP B, AP C, Flags extra );
+	signed short (*cmpap)( AP A, AP B, AP* C, Flags extra );
 	void (*diff)( AP A, AP B, AP C, Flags extra );
 
-    void (*floor)( AP A, AP C, Flags extra );
+    void (*floor)( AP A, AP* C, Flags extra );
 
-	void (*cos)( AP R, AP C, Flags extra );
-	void (*sine)( AP R, AP C, Flags extra );
+	void (*cos)( AP R, AP* C, Flags extra );
+	void (*sine)( AP R, AP* C, Flags extra );
 	void (*tan)( AP R, AP C, Flags extra );
 	//void (*PI)( Precision P, Flags extra ); // if Precision P==0, the Precision is based on the current setting for aplib->Precision
 

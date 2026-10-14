@@ -166,45 +166,22 @@ unsigned int BITFIELD_ADD( unsigned int A, unsigned int B )  {
 
 int AP_EQ( AP A, AP B, AP epsilon, Flags info ) {
 
-    AP _ = (AP) calloc( 1,sizeof(struct ap) );
-    
-	if( aplib->cmpap( A, B, _, info ) == 0 )    {
-	    
-	    aplib->FreeAP( _ );
-	   
-		return TRUE;
-	}
-	if( aplib->cmpap( A, B, _, info ) < 0 ) {
-	    
-	     aplib->sub( A, B, _, info );
-	     
-		if( (AP)(A-B) < epsilon ) {
-		    
-            aplib->FreeAP( _ );
-       		return TRUE;
-		}
-		
-		
-	}
-	
-	if( aplib->cmpap( B, A, _, info ) > 0 )  {
-	   
-        aplib->sub( B, A, _, info );	 
-		if( (AP)(B-A) < epsilon ) {
-		    
-		    aplib->FreeAP( _ );
-			return TRUE;
-		}
-		
-	}
-	
-	aplib->FreeAP( _ );
-	
-	AP C = (AP)calloc( 1,sizeof(struct ap) );
-	
-	*C = *AP0;
-	
-	return FALSE;    
+    (void)epsilon;
+    (void)info;
+
+    if( A == (AP)0 || B == (AP)0 )
+        return FALSE;
+
+    if( A->sign != B->sign )
+        return FALSE;
+
+    if( cmpdstr( A->wholepart, B->wholepart ) != 0 )
+        return FALSE;
+
+    if( cmpdstr( A->fractpart, B->fractpart ) != 0 )
+        return FALSE;
+
+    return TRUE;
 }
 int EQ( double A, double B, double epsilon )	{
 

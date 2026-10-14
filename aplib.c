@@ -4,11 +4,16 @@ IEEE754 mode, and arbitrary-Precision emulation of IEEE754 floats and doubles." 
 
 // C STDLIB INC'S
 #include <stdlib.h>
-#include <stdint.h>
+
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+
+#ifdef APLIB_DIAGNOSTICS 
 #include <time.h>
+#endif
+
+
 
 #include "./lean_string.h"
 #include "./aplib.h"
@@ -17,11 +22,15 @@ IEEE754 mode, and arbitrary-Precision emulation of IEEE754 floats and doubles." 
 #define APNUM AP
 #define ULL unsigned long long int
 
+#ifndef uint64_t
+#define uint64_t unsigned long long int
+#endif
+
 struct aplib_t* aplib;
 struct Planck* planck;
 
 /**
-TABLE FOR OPTIMISING THE ARITHMETIC ALGORITHMS' REQUIREMENT TO DETERMINE A RESULT DIGIT AND A CARRYOVER DIGIT.
+TABLES FOR OPTIMISING THE ARITHMETIC ALGORITHMS' REQUIREMENT TO DETERMINE A RESULT DIGIT AND A CARRYOVER DIGIT.
 (A MSD IN A 2DIGIT INTERIM RESULT, e.g, 7 + 11 == 18, the carryover digit would be '1', the result digit would be '8'.)
 The alternative would be to do:
 
@@ -40,6 +49,7 @@ to an animation subroutine for visual rendering of the operation (subject to a p
 the sequence of interim operations can be seen happening sequentiallyn, any animation rendering the operation would need to slow the
 frame-rate down for the sequence of steps to be visible to the viewer). Being in ASCII format without additional shifting & masking is kinda clean.
 */
+
 signed char __VALUES__[ (89+19)*2 + 2 ] = {
 
 	'1', '9', '1', '8', '1', '7', '1', '6', '1', '5', '1', '4', '1', '3', '1', '2', '1', '1', '1', '0',
@@ -54,14 +64,6 @@ signed char __VALUES__[ (89+19)*2 + 2 ] = {
 	'7', '0', '7', '1', '7', '2', '7', '3', '7', '4', '7', '5', '7', '6', '7', '7', '7', '8', '7', '9',
 	'8', '0', '8', '1', '8', '2', '8', '3', '8', '4', '8', '5', '8', '6', '8', '7', '8', '8', '8', '9'
 };
-
-/**
-This sets the pointer to the Lookup Table to the middle, as the first half of the table is for quick lookup of negative results.
-For example 4 - 5 == -1. Typically, negative lookup results are in the range ( -19 <= r <= -1 ), as SUB is the only signed Operation.
-Other operations have a simple method for establishing the sign without dynamic production.
-*/
-signed char* VALUES;
-
 
 unsigned char __iVALUES__[ (89+19)*2 + 2 ] = {
 
@@ -78,7 +80,6 @@ unsigned char __iVALUES__[ (89+19)*2 + 2 ] = {
 	8, 0, 8, 1, 8, 2, 8, 3, 8, 4, 8, 5, 8, 6, 8, 7, 8, 8, 8, 9
 };
 
-unsigned char* iVALUES;
 
 /**
 Static descriptors for indexing the available public Operators.
@@ -639,6 +640,14 @@ static void ADD( AP A, AP B, AP C, Flags extra ) {
 	b = '0';
 	r = '0';
 
+	/**
+	This sets the pointer to the Lookup Table to the middle, as the first half of the table is for quick lookup of negative results.
+	For example 4 - 5 == -1. Typically, negative lookup results are in the range ( -19 <= r <= -1 ), as SUB is the only signed Operation.
+	Other operations have a simple method for establishing the sign without dynamic production.
+	*/
+	signed char* VALUES = ((signed char*)__VALUES__)+(19*2);
+
+
     while( 0 )  {
       
    ADDloop:    
@@ -839,7 +848,8 @@ static void SUB( AP A, AP B, AP C, Flags extra ) {
 	b = '0';
 	carry = '0';
 	r = '0';
-	
+
+	signed char* VALUES = ((signed char*)__VALUES__)+(19*2);
 	
     while( 0 )  {
       
@@ -1003,177 +1013,144 @@ static void SUB( AP A, AP B, AP C, Flags extra ) {
 	return;
 }
 
-static void SUB_old( AP A, AP B, AP C, Flags extra ) {
-
-	char* Awp = A->wholepart;
-	char* Bwp = B->wholepart;
-	char* Cwp;
-
-	uint64_t lenA = lean_strlen(Awp);
-	int64_t x = lenA-1;
-
-	uint64_t lenB = lean_strlen(Bwp);
-	int64_t y = lenB-1;
-
-	uint64_t lenC = max(lenA,lenB)+1;
-    uint8_t PART = 2;
-    
-	if( C==(AP)0 )  {
-
-		C = (AP)calloc( 1, sizeof(struct ap) );
-		C->wholepart = (char*)malloc( lenC+1 );
-	}
-
-	if( C->wholepart == (char*)0 )  {
-
-		C->wholepart = (char*)malloc( lenC + 1 );
-	}
-    
-    Cwp = C->wholepart;
-
-	Cwp[ lenC ] = '\0';
-	Cwp[ lenC-1 ] = '0';
-
-	ULL z = lenC-1;
-
-	signed char a = '0';
-	signed char b = '0';
-
-	unsigned char a0 = 0;
-	unsigned char b0 = 0;
-
-	signed char carry = '0';
-
-	signed char r = '0';
-
-	SUBloop:
-
-	if( a0 )
-		a = '0';
-	else
-		a = Awp[x];
-
-	if( b0 )
-		b = '0';
-	else
-		b = Bwp[y];
-
-	r = (signed short) ( (a - b) + carry );
-	r = r - 48;
-
-	if( r<0 )	{
-
-		r = 10 + r;
-		carry = '0' - 1;
-	}
-	else	{
-
-		carry = VALUES[ ((r)*2) ];
-	}
-
-	Cwp[z] = VALUES[ ((r)*2)+1 ];
-
-	--z;
-	--x;
-	--y;
-
-
-	if( x<0 )
-		a0 = 1;
-
-	if( y<0 )
-		b0 = 1;
-
-
-	if( a0 && b0 )	{
-
-        if( PART==2 )   {
-
-    		if( carry == ('0' - 1) )	{
-    
-    			// result is negative.
-    			Cwp[z] = '-';
-    		}
-    		else
-    			Cwp[z] = carry;
-        }
-        else    {
-            
-            Cwp[0] = '0';
-            shift_left_leading_zeroes( Cwp );
-        }
-
-	}
-	else
-		goto SUBloop;
-
-	if( Cwp[z]=='-' )	{
-
-		uint64_t _len = lean_strlen(Cwp);
-		++Cwp;
-		AP D;
-		D = BlankAP();
-		D->wholepart = (char*)malloc( _len+1 );
-
-		D->wholepart[0] = '1';
-		D->wholepart[1] = '\0';
-
-		AP F; // = (AP)calloc( _len+1, sizeof(char) );
-		F = aplib->BlankAP();
-		F->wholepart = (char*)malloc( _len+1 );
-		++F->wholepart;
-
-		SUB( D,C,F,extra );
-		--Cwp;
-		--F->wholepart;
-		F->wholepart[0] = '-';
-		lean_strcpy( Cwp,F->wholepart );
-		aplib->FreeAP( D );
-		aplib->FreeAP( F );
-	}
-	/**
-	END OF SUB BLOCK
-	*/
-	
-	shift_left_leading_zeroes( Cwp );
-       
-    if( cmpdstr(A->wholepart, B->wholepart) < 0 )   {
-        
-        C->sign = '-';
-    }
-    else
-        C->sign = '+';
-
-	return;
-}
-
 #define INITAP(A) AP A = (AP)calloc(sizeof(struct ap)) 
 
 #define CHECKAP(A,lenwp,lenfp) if( A==(AP)0 ) *A = *BlankAP();\
 if( A->wholepart==(char*)0 ) A->wholepart = (char*)calloc( lenwp+1, sizeof(char) );\
 if( A->fractpart==(char*)0 ) A->fractpart = (char*)calloc( lenfp+1, sizeof(char) ); 
 
-static void MUL( AP A, AP B, AP C, Flags extra ) {
+static void MUL( AP A, AP B, AP* C, Flags extra ) {
 
-	if( A == (AP)0 || B == (AP)0 || C == (AP)0 )
-		return;
+	short int PART = 1;
+	
+	register char* Apart = A->fractpart;
+	register char* Bpart = B->fractpart;
+	register char* Cpart;
 
-	if( C->wholepart == (char*)0 )
-		C->wholepart = (char*)calloc( 1, sizeof(char) );
-	if( C->fractpart == (char*)0 )
-		C->fractpart = (char*)calloc( 1, sizeof(char) );
+	uint64_t lenA = lean_strlen( A->fractpart );
+	uint64_t lenB = lean_strlen( B->fractpart );
+	uint64_t lenC = lenA + lenC;
+
+	if( *C==(AP)0 )	{
+
+		*C = (AP)calloc( 1, sizeof(struct ap) );
+	}
+	if( (*C)->fractpart==(char*)0 )	{
+
+		(*C)->fractpart = (char*)calloc( lenC+1, sizeof(char) );
+	}
+
+	Cpart = (*C)->fractpart;
+
+
+	register signed long long int x = lenA-1;
+	register signed long long int y = lenB;
+	register signed long long int z = 0;
+	register signed long long cz = 0;
+
+	register unsigned char carry = 0;
+	register unsigned char a = 0;
+	register unsigned char b = 0;
+	register unsigned char c = 0;
+
+
+	signed long long tz = 0;
+
+	z = cz = tz = lenA+lenB-1;
+
+	unsigned char* iVALUES = (unsigned char*)__iVALUES__+(19*2);
+
+	// FOR_EACH digit in A, starting with lsd of fp, A[y] * B[all columns, 1 at a time, both fp and wp, then
+	// that result (2 buffers, cwp anf cfp), is preserved for accumulation.
+	
+	LOOP:
+
+	b = Bpart[y] & 15;
+	
+	while( x )  {
+		
+   	MULloop:
+	
+		--x;
+		a = Apart[x] & 15;
+    	
+		c = (a * b) + carry + Cpart[ cz ];
+		carry = iVALUES[ (c*2) ];
+		Cpart[cz] = iVALUES[ (c*2)+1 ];
+        
+		if( carry > 8 ) fprintf( stderr, "Carry digit > 8 in MUL: %d\n", carry );
+
+		if( y==0 )	{
+
+            Cpart[ cz-1 ] += carry;
+
+			/*
+			Each loop of A (next digit in B), we no longer accum the same C offset,
+			it's now shunted to the left 1.
+			*/
+			
+			--x;
+			y = lenB-1;
+			--z;
+			cz = z;
+			carry = 0;
+		}
+		else    {
+		    
+			--y;
+			--cz;
+		}
+	}
+
+    while( lenC ) {
+        
+        Cpart[ tz-- ] |= 48;
+        --lenC;
+    }
+
+	if( PART==1 )	{
+
+		PART = 2;
+		lenA = lean_strlen( A->wholepart );
+		lenB = lean_strlen( B->wholepart );
+		lenC = lenA + lenB;
+		a = b = c = 0;
+		x = lenA-1;
+		y = lenB-1;
+		z = cz = tz = lenA+lenB-1;
+
+		Apart = A->wholepart;
+		Bpart = B->wholepart;
+
+		if( C->wholepart==(char*)0 )	{
+
+			C->wholepart = (char*)calloc( lenC+1, sizeof(char) );
+		}
+
+
+		Cpart = C->wholepart;
+		goto LOOP;
+
+	}
+
+	while( lenC ) {
+        
+        Cpart[ tz-- ] |= 48;
+        --lenC;
+    }
+
 
 	if( A->sign != B->sign )
 		C->sign = '-';
 	else
 		C->sign = '+';
-
+    
 	return;
 }
 
 static Flags spare_extra;
 
-static void DIV( AP A, AP B, AP C, Flags extra ) {
+static void DIV( AP A, AP B, AP* C, Flags extra ) {
 
     if( extra == (Flags)0 )
         extra = spare_extra;
@@ -1307,7 +1284,7 @@ Loop:
 	goto Loop;
 }
 
-static void BXN( AP A, AP B, AP C, Flags extra ) {
+static void BXN( AP A, AP B, AP* C, Flags extra ) {
 
 	char* Awp = A->wholepart;
 	char* Bwp = B->wholepart;
@@ -1408,7 +1385,6 @@ void* register_heap_alloc_free( void (*f)(void* ep) )  {
 static AP CopyAP( AP A, Flags extra );
 
 
-
 static AP BlankAP() {
 
 	return (AP)calloc( 1, sizeof(struct ap) );
@@ -1495,8 +1471,6 @@ AP SimpleAP( char* val )	{
 	return C;
 }
 
-
-
 static AP CopyAP( AP A, Flags extra )   {
 
 	AP _ = (AP)malloc( sizeof(struct ap) );
@@ -1506,7 +1480,7 @@ static AP CopyAP( AP A, Flags extra )   {
 	return _;
 }
 
-static void LOGb( AP A, AP B, AP C, Flags extra );
+static void LOGb( AP A, AP B, AP* C, Flags extra );
 
 static AP APNUMERATOR;
 static AP APDENOMINATOR;
@@ -1583,7 +1557,7 @@ static void LOGb( AP A, AP B, AP C, Flags extra )	{
 	APNUMERATOR = rational_numerator;
 	APDENOMINATOR = max_denom;
 
-	if( C==(AP)0 )  {
+	if( *C==(AP)0 )  {
 
 		C = (AP)malloc( sizeof(struct ap) );
 	}
@@ -1591,20 +1565,21 @@ static void LOGb( AP A, AP B, AP C, Flags extra )	{
 	aplib->divide( APNUMERATOR, APDENOMINATOR, C, extra );
 }
 
-static void floor_ap( AP A, AP C, Flags extra );
-static void floor_ap( AP A, AP C, Flags extra )   {
+static void floor_ap( AP A, AP* C, Flags extra );
+static void floor_ap( AP A, AP* C, Flags extra )   {
 
 
-	AP* C_ref = (AP*)&C;
-	C = *C_ref;
+	AP C_ref = *C;
 
-	C->wholepart = (char*)malloc( lean_strlen(A->wholepart) );
-	lean_strcpy( C->wholepart, A->wholepart );
-	C->fractpart = (char*)malloc( 2 );
-	lean_strcpy( C->fractpart, "0" );
-	C->sign = A->sign;
-	C->base = A->base;
-	C->precision = 0;
+	C_ref->wholepart = (char*)malloc( lean_strlen(A->wholepart) );
+	lean_strcpy( C-ref->wholepart, A->wholepart );
+	C_ref->fractpart = (char*)malloc( 2 );
+	lean_strcpy( C_ref->fractpart, "0" );
+	C_ref->sign = A->sign;
+	C_ref->base = A->base;
+	C_ref->precision = 0;
+
+	return;
 }
 
 static char* default_desc = "AP Arbitrary-Precision number.";
@@ -1628,7 +1603,7 @@ static AP NewAP( char* wp, char* fractpart, char* sign, int* base, Precision pre
 
 	return a;
 };
-static void divby2( AP A, AP C, Flags extra ) {
+static void divby2( AP A, AP* C, Flags extra ) {
 
 	DIV( A, AP2, C, extra );
 }
@@ -1654,8 +1629,6 @@ void InitAPLIB()    {
 		aplib_initialised = 1;
 	}
 	
-	iVALUES = ((unsigned char*)__iVALUES__)+(19*2);
-	VALUES = ((signed char*)__VALUES__)+(19*2);
 
 	AP1 = QuickAP( "1" );
 	AP0 = QuickAP( "0" );

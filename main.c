@@ -11,6 +11,19 @@
 #include "./trig.h"
 #include "./tests.h"
 
+static char* safe_argv( int argc, char** argv, int index ) {
+
+    if( argv == (char**)0 )
+        return (char*)0;
+
+    if( index < 0 || index >= argc )
+        return (char*)0;
+
+    if( argv[index] == (char*)0 )
+        return (char*)0;
+
+    return argv[index];
+}
 
 int main( int argc, char** argv )   {
 
@@ -19,18 +32,18 @@ int main( int argc, char** argv )   {
     char* operand2 = (char*)0;
 
 	if( argc > 1 )
-    opt = argv[1];
+    opt = safe_argv( argc, argv, 1 );
 		
 	if( argc > 2 )
-    operand1 = argv[2];
+    operand1 = safe_argv( argc, argv, 2 );
 
 	if( argc > 3 )
-    operand2 = argv[3];
+    operand2 = safe_argv( argc, argv, 3 );
 	
     if( (opt != (char*)0) && lean_strcmp( opt, "ieee_754" ) )    {
         
         double f;
-        if( argc>2 )
+        if( operand1 != (char*)0 )
             f = atof( operand1 );
         else
             f = 200.0;
@@ -73,10 +86,17 @@ int main( int argc, char** argv )   {
     
     if( lean_strcmp( opt, "bitfield_add" ) )    {
     
-        if( argc > 2 )  {
+        if( argc >= 4 )  {
             
-            unsigned int A = atoi( argv[2] );
-            unsigned int B = atoi( argv[3] );
+            char* arg_a = safe_argv( argc, argv, 2 );
+            char* arg_b = safe_argv( argc, argv, 3 );
+            if( arg_a == (char*)0 || arg_b == (char*)0 )    {
+                fprintf( stderr, "bitfield_add requires two integer arguments.\n" );
+                return 1;
+            }
+
+            unsigned int A = (unsigned int) atoi( arg_a );
+            unsigned int B = (unsigned int) atoi( arg_b );
             unsigned int C;
             
             SPEEDTESTINIT();
@@ -109,8 +129,9 @@ int main( int argc, char** argv )   {
         
         double a = 1.0;
         
-        if( argc > 2 )
-            a = atof( argv[2] );
+        char* angle_arg = safe_argv( argc, argv, 2 );
+        if( angle_arg != (char*)0 )
+            a = atof( angle_arg );
         
         printf( "My version of sine calculates sine(%.10f) to be: %.10f\nThe cstdlib calcs %.10f", a, sine( a,6 ), sin(a) );
         
@@ -120,8 +141,9 @@ int main( int argc, char** argv )   {
         
         char* input = "100.0";
         
-        if( argc>2 )
-            input = argv[2];
+        char* x_arg = safe_argv( argc, argv, 2 );
+        if( x_arg != (char*)0 )
+            input = x_arg;
             
         double x = (double)atof( input );
         
@@ -173,8 +195,9 @@ int main( int argc, char** argv )   {
     if( lean_strcmp(opt, "native_log") )    {
         
         char* input = "5.0";
-        if( argc>2 )
-            input = argv[2];
+        char* log_arg = safe_argv( argc, argv, 2 );
+        if( log_arg != (char*)0 )
+            input = log_arg;
             
         double A = (double) atof( input );
         
@@ -200,9 +223,16 @@ int main( int argc, char** argv )   {
 	}
 	else	{
 
+		char* lhs = safe_argv( argc, argv, 2 );
+		char* rhs = safe_argv( argc, argv, 3 );
+		if( lhs == (char*)0 || rhs == (char*)0 )    {
+			fprintf( stderr, "AP arithmetic requires OPERATION LHS RHS.\n" );
+			return 1;
+		}
+
 		arg1 = strdup( opt );
-		arg2 = strdup( argv[2] );
-		arg3 = strdup( argv[3] );
+		arg2 = strdup( lhs );
+		arg3 = strdup( rhs );
 	}
 
 	AP A = aplib->QuickAP( arg2 );

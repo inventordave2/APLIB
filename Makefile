@@ -10,7 +10,7 @@ EXPECT_STDLIB =-DEXPECT_STDLIB
 NO_STDLIB =-DNO_STDLIB
 appname=app
 
-all: aplib lean_string trig ieee754 native tests app_front
+all: aplib lean_string trig ieee754 native tests rb_core rb_buffer rb_io app_front
 
 debug_it:
 	gdb ./$(appname).exe
@@ -24,6 +24,15 @@ aplib: ./aplib.c ./aplib.h ./aplib_constants.h ./lean_string.h
 lean_string: ./lean_string.h
 	$(COMPILE) $(NOEXE) -o ./lean_string.o ./lean_string.h
 
+rb_core: ./rb_core.c ./rb_core.h
+	$(COMPILE) $(NOEXE) -o ./rb_core.o ./rb_core.c
+
+rb_buffer: ./rb_buffer.c ./rb_buffer.h ./rb_core.h
+	$(COMPILE) $(NOEXE) -o ./rb_buffer.o ./rb_buffer.c
+
+rb_io: ./rb_io.c ./rb_io.h ./rb_core.h
+	$(COMPILE) $(NOEXE) -o ./rb_io.o ./rb_io.c
+
 trig: ./trig.c ./trig.h
 	$(COMPILE) $(NOEXE) -o ./trig.o ./trig.c
 
@@ -33,8 +42,8 @@ ieee754: ./ieee754.c ./ieee754.h
 native: ./native.c ./native.h
 	$(COMPILE) $(NOEXE) -o ./native.o ./native.c
 
-app_front: ./main.c ./lean_string.h
-	$(COMPILE) $(EXPECT_STDLIB) -o ./$(appname).exe ./aplib.o ./trig.o ./ieee754.o ./native.o ./tests.o ./main.c -lm
+app_front: ./main.c ./lean_string.h ./rb_core.o ./rb_buffer.o ./rb_io.o
+	$(COMPILE) $(EXPECT_STDLIB) -o ./$(appname).exe ./aplib.o ./trig.o ./ieee754.o ./native.o ./tests.o ./rb_core.o ./rb_buffer.o ./rb_io.o ./main.c -lm
 
 clean:
 	rm *.o
