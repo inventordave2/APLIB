@@ -1,3 +1,24 @@
+MARKDOWN NOTES (for markdown editor at https://dillinger.io/):
+
+## Math
+
+Inline math: $E = mc^2$
+
+Block equations:
+
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+$$
+
+(Markdown makes it easy to format text. You can write in **bold**, *italic*, or ~~strikethrough~~. Combine them for ***bold italic*** text. Use `inline code` for technical terms.)
+Blockquotes can contain other markdown elements:
+> **Tip:** Use `Cmd+Shift+Z` to enter zen mode for distraction-free writing.
+
+
+---
+
+
+
 
 
 a/sineA = b/sineB = c/sineC
