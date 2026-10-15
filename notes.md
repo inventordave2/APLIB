@@ -15,6 +15,15 @@ Blockquotes can contain other markdown elements:
 > **Tip:** Use `Cmd+Shift+Z` to enter zen mode for distraction-free writing.
 
 
+Tables support alignment:
+
+| Feature | Status | Notes |
+|:--------|:------:|------:|
+| Markdown editing | Active | Monaco-powered |
+| Live preview | Active | Scroll-synced |
+| Cloud sync | Available | 5 providers |
+| PDF export | Available | Server-rendered |
+
 ---
 
 
