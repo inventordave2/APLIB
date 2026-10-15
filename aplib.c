@@ -14,6 +14,7 @@ IEEE754 mode, and arbitrary-Precision emulation of IEEE754 floats and doubles." 
 #include "./aplib.h"
 #include "./aplib_constants.h"
 
+
 #define APNUM AP
 #define ULL unsigned long long int
 
@@ -1752,4 +1753,7 @@ AP AP2_7;
 AP AP22_7;
 AP AP_PI;
 
-
+#ifndef EXPECT_CSTDLIB
+#include "./static_heap_tail.h"
+HEAP_PTR_TYPE heap = Heap( 4096 );
+#endif
