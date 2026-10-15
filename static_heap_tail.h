@@ -14,6 +14,7 @@ typedef struct allocation_frame {
 #define MAX_ALLOCATIONS 1024
 #define MAX_FREE_RECORDS 1024
 
+
 static struct allocation_frame allocated[MAX_ALLOCATIONS];
 static struct allocation_frame* allocated_c = (struct allocation_frame*) &allocated;
 
@@ -22,9 +23,18 @@ static struct allocation_frame* alloc_table_free_c = (struct allocation_frame*) 
 
 static unsigned char* heap_start;
 
+#ifndef Heap
 unsigned char* Heap( int size );
+#endif
+
+#ifndef alloc
 unsigned char* alloc( int size );
+#endif
+
+#ifndef free2
 void free2( unsigned char* ptr );
+#endif
+
 
 #define gen_frame( dest, ptr, size )    { struct allocation_frame af; af.ptr = ptr; af.size = size; dest = af; }
 #define defrag_alloc_table_free(x) for( int y=x; y<MAX_FREE_RECORDS; y++ ) { alloc_table_free[y] = alloc_table_free[y+1]; }
