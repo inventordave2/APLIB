@@ -1,9 +1,13 @@
 #ifndef DAVELIB_COLOUR
 #define DAVELIB_COLOUR
 
-
-#include <stdarg.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "./lean_string.h"
+
+#define COLOUR_MAX_CODES_COUNT 256
+#define ANSI_ISO_ESC "\033"
+#define PORTABLE_COLOUR_H_DIAGNOSTICS
 
 /*
 The Colour Library Interface.
@@ -122,22 +126,6 @@ char* RGB_BG;
 
 char* DEL;
 
-#endif
-
-// COLOUR_C
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
-#define COLOUR_MAX_CODES_COUNT 256
-#define ANSI_ISO_ESC "\033"
-
-#define PORTABLE_COLOUR_H_DIAGNOSTICS
 
 struct Colour* colour;
 void InitColour();
@@ -249,12 +237,6 @@ static void colour_print_hook( char* buff_in )   {
     
     return;
 }
-
-#ifdef EXPECT_CSTDLIB
-
-
-
-#endif
 
 
 static int _printf( FILE* file_h, char* args, int num_modifiers, char* buff_in )	{
@@ -489,7 +471,6 @@ static char* wrap( char* str, char* opt )	{
 }
 
 
-
 char* getColourCode( char* colour_str ) {
     
     char* _ = (char*)0;
@@ -501,7 +482,6 @@ char* getColourCode( char* colour_str ) {
 Some Windows configs require a manual invocation of VT processing.
 */
 #ifdef _WIN32
-
 #include <windows.h>
 static int color_win32_vt;
 int win32_color()	{
@@ -517,7 +497,6 @@ int win32_color()	{
 
 	return color_win32_vt;	
 }
-
 #endif
 
 
