@@ -4,55 +4,54 @@
 
 
 #define ASCII_NULL (char)0
-#define ANSI_ISO_ESC (char)27
+#define ANSI_ISO_ESC "\033"
 
-const char* FULL_STRING = ANSI_ISO_ESC "[30m" ANSI_ISO_ESC "[31m" ANSI_ISO_ESC "[32m" ANSI_ISO_ESC "[33m" ANSI_ISO_ESC "[34m" \
+static char* FULL_STRING = ANSI_ISO_ESC "[30m" ANSI_ISO_ESC "[31m" ANSI_ISO_ESC "[32m" ANSI_ISO_ESC "[33m" ANSI_ISO_ESC "[34m" \
 ANSI_ISO_ESC "[35m" ANSI_ISO_ESC "[36m" ANSI_ISO_ESC "[37m";
 
-static char NORMAL[16];
+static char NORMAL[8];
 
-static char* FG_BLACK = FULL_STRING+0;
-static char* FG_RED = FULL_STRING+8;
-static char* FG_GREEN = FULL_STRING+16;
-static char* FG_YELLOW = FULL_STRING+24;
-static char* FG_BLUE = FULL_STRING+32;
-static char* FG_MAGENTA = FULL_STRING+40;
-static char* FG_CYAN = FULL_STRING+48;
-static char* FG_WHITE = FULL_STRING+56;
-static char* MOSTRECENT = FG_WHITE;
-
-
-
-static char* FG_BRIGHT_BLACK = FULL_STRING+64;
-static char* FG_BRIGHT_RED = FULL_STRING+72;
-static char* FG_BRIGHT_GREEN = FULL_STRING+;
-static char* FG_BRIGHT_YELLOW;
-static char* FG_BRIGHT_BLUE;
-static char* FG_BRIGHT_MAGENTA;
-static char* FG_BRIGHT_CYAN;
-static char* FG_BRIGHT_WHITE;
-
-static char* BG_BLACK;
-static char* BG_RED;
-static char* BG_GREEN;
-static char* BG_YELLOW;
-static char* BG_BLUE;
-static char* BG_MAGENTA;
-static char* BG_CYAN;
-static char* BG_WHITE;
-
-static char* BG_BRIGHT_BLACK = BG_WHITE+9;
-static char* BG_BRIGHT_RED = BG_WHITE+18;
-static char* BG_BRIGHT_GREEN = BG_WHITE+27;
-static char* BG_BRIGHT_YELLOW = BG_WHITE+36;
-static char* BG_BRIGHT_BLUE = BG_WHITE+45;
-static char* BG_BRIGHT_MAGENTA = BG_WHITE+54;
-static char* BG_BRIGHT_CYAN = BG_WHITE+63;
-static char* BG_BRIGHT_WHITE = BG_WHITE+72;
+static char* FG_BLACK;
+static char* FG_RED;
+static char* FG_GREEN;
+static char* FG_YELLOW;
+static char* FG_BLUE;
+static char* FG_MAGENTA;
+static char* FG_CYAN;
+static char* FG_WHITE;
+static char* MOSTRECENT;
 
 
-static char* EXTRA_COLOUR_TAGS = "rainbow\0";
-static char* RAINBOW = EXTRA_COLOUR_TAGS;
+static char* FG_BRIGHT_BLACK;
+static char* FG_BRIGHT_RED;
+static const char* FG_BRIGHT_GREEN;
+static const char* FG_BRIGHT_YELLOW;
+static const char* FG_BRIGHT_BLUE;
+static const char* FG_BRIGHT_MAGENTA;
+static const char* FG_BRIGHT_CYAN;
+static const char* FG_BRIGHT_WHITE;
+
+static const char* BG_BLACK;
+static const char* BG_RED;
+static const char* BG_GREEN;
+static const char* BG_YELLOW;
+static const char* BG_BLUE;
+static const char* BG_MAGENTA;
+static const char* BG_CYAN;
+static const char* BG_WHITE;
+
+static char* BG_BRIGHT_BLACK;
+static char* BG_BRIGHT_RED;
+static char* BG_BRIGHT_GREEN;
+static char* BG_BRIGHT_YELLOW;
+static char* BG_BRIGHT_BLUE;
+static char* BG_BRIGHT_MAGENTA;
+static char* BG_BRIGHT_CYAN;
+static char* BG_BRIGHT_WHITE;
+
+
+static char* EXTRA_COLOUR_TAGS;
+static char* RAINBOW;
 
 static char* BOLD;
 static char* ITALIC;
@@ -73,19 +72,14 @@ static char* fg_selection = (char*)0;
 #define fmt_dirpath 7
 #define website_url 8
 
-static char** modes_codes[16];
-modes_codes[ success ] = FG_GREEN;
-modes_codes[ info ] = FG_BLUE;
-modes_codes[ warning ] = FG_YELLOW;
-modes_codes[ error ] = FG_RED;
-modes_codes[ advice ] = FG_CYAN;
-modes_codes[ fmt_filename ] = FG_YELLOW;
-modes_codes[ fmt_dirpath ] = FG_YELLOW;
+char* modes_codes[64];
+
 
 static char* fmt( char* in );
 static char* fg( char* cn );
 static char* bg( char* cn );
 static char* getcolourcode( char* colourname );
+static char* getcolourcode_bg( char* colourname );
 static char* wrap( char* str, char* opts );
 
 
@@ -97,10 +91,12 @@ static char* fg( char* cn )	{
 	return fg_selection;
 }
 
+static char* getcolourcode_bg( char* cn );
+
 static char* bg( char* cn )	{
 
 	if( cn != (char*0) )
-		bg_selection = getcolourcode( cn );
+		bg_selection = getcolourcode_bg( cn );
 
 	return bg_selection;
 }
@@ -127,7 +123,45 @@ static char* getcolourcode( char* colourname )	{
 		return FG_MAGENTA;
 
 	if( lean_strcmp( "cyan", colourname )) 
-		return FG_WHITE;
+		return FG_CYAN;
+
+	if( lean_strcmp( "bold", colourname ))
+		return BOLD;
+
+	if( lean_strcmp( "underline", colourname ))
+		return UNDERLINE;
+
+	if( lean_strcmp( "italic", colourname ) || lean_strcmp( "italics", colourname ))
+		return ITALIC;
+
+	if( lean_strcmp( "strikethrough", colourname ) || lean_strcmp( "score", colourname ))
+		return STRIKETHROUGH;
+
+	return NORMAL;
+}
+
+static char* getcolourcode_bg( char* colourname )	{
+
+	if( lean_strcmp( "white", colourname )) 
+		return BG_WHITE;
+	
+	if( lean_strcmp( "red", colourname ) )
+		return BG_RED;
+
+	if( lean_strcmp( "green", colourname )) 
+		return BG_GREEN;
+
+	if( lean_strcmp( "yellow", colourname )) 
+		return BG_YELLOW;
+
+	if( lean_strcmp( "blue", colourname )) 
+		return BG_BLUE;
+
+	if( lean_strcmp( "magenta", colourname )) 
+		return BG_MAGENTA;
+
+	if( lean_strcmp( "cyan", colourname )) 
+		return BG_CYAN;
 
 	if( lean_strcmp( "bold", colourname ))
 		return BOLD;
@@ -154,6 +188,14 @@ struct colour_t* get_colour_api()	{
 	colour_api.wrap = wrap;
 	colour_api.getcolourcode = getcolourcode;
 	
+	modes_codes[ success ] = FG_GREEN;
+	modes_codes[ info ] = FG_BLUE;
+	modes_codes[ warning ] = FG_YELLOW;
+	modes_codes[ error ] = FG_RED;
+	modes_codes[ advice ] = FG_CYAN;
+	modes_codes[ fmt_filename ] = FG_YELLOW;
+	modes_codes[ fmt_dirpath ] = FG_YELLOW;
+
 	return (struct colour_t*) colour_api;
 }
 
@@ -204,7 +246,7 @@ static char* fmt( char* in )	{
 			char t[2];
 			t[0] = c;
 			t[1] = '\0';
-			strcat( out, (char*)t );
+			lean_strcat( out, (char*)t );
 			escaped = 0;
 			continue;
 		}
@@ -364,7 +406,7 @@ static void selectRandomColourString( char* buf )  {
 }
 
 #ifndef size_t
-#define size_t long int 
+#define size_t long unsigned int 
 #endif 
 
 extern void* malloc( size_t num );
