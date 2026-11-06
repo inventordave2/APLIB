@@ -50,6 +50,10 @@ static char* BG_BRIGHT_MAGENTA = BG_WHITE+54;
 static char* BG_BRIGHT_CYAN = BG_WHITE+63;
 static char* BG_BRIGHT_WHITE = BG_WHITE+72;
 
+
+static char* EXTRA_COLOUR_TAGS = "rainbow\0";
+static char* RAINBOW = EXTRA_COLOUR_TAGS;
+
 static char* BOLD;
 static char* ITALIC;
 static char* UNDERLINE;
@@ -83,6 +87,23 @@ static char* fg( char* cn );
 static char* bg( char* cn );
 static char* getcolourcode( char* colourname );
 static char* wrap( char* str, char* opts );
+
+
+static char* fg( char* cn )	{
+
+	if( cn != (char*)0 )
+		fg_selection = getcolourcode( cn );
+
+	return fg_selection;
+}
+
+static char* bg( char* cn )	{
+
+	if( cn != (char*0) )
+		bg_selection = getcolourcode( cn );
+
+	return bg_selection;
+}
 
 
 static char* getcolourcode( char* colourname )	{
@@ -261,9 +282,97 @@ static char* fmt( char* in )	{
 	return out;
 }
 
+
+#ifndef srand
+void srand( unsigned int seed )	{
+
+	while( seed )	{
+
+		rand();
+		seed -= (seed>>1);
+	}
+
+	return;
+}
+#endif
+
+#ifndef rand
+int rand()	{
+
+	/* A canonical implementation returns a value between [0,RANDMAX]. This is a toy impl. for easy drop-in. */ 
+	static int x = 1;
+	static int y = 0;
+
+	x *= ( x << 1 ) - y;
+	y += ( x >> 2);
+
+	return x;
+}
+#endif 
+
+static void selectRandomColourString( char* buf )  {
+    
+
+    srand(0);
+    short rnd_num = (short)(rand() % 8);
+    char* selection = (char*)0;
+    
+    switch( rnd_num )   {
+        
+        case 0:
+            selection = "brightblack";
+            break;
+            
+        case 1:
+            selection = "brightred";
+            break;
+            
+        case 2:
+            selection = "brightgreen";
+            break;
+            
+        case 3:
+            selection = "brightyellow";
+            break;
+            
+        case 4:
+            selection = "brightblue";
+            break;
+            
+        case 5:
+            selection = "brightmagenta";
+            break;
+            
+        case 6:
+            selection = "brightcyan";
+            break;
+            
+        case 7:
+            selection = "brightwhite";
+            break;
+            
+        
+        default:
+            selection = "brightblack";
+            break;
+
+    }
+    
+    lean_strcpy( buf, selection );
+    
+    return;
+}
+
+#ifndef size_t
+#define size_t long int 
+#endif 
+
+extern void* malloc( size_t num );
+extern void* calloc( size_t num, size_t size );
+
 static char* wrap( char* str, char* opt )	{
 	
-	int strlen_str = strlen(str);
+	int strlen_str = lean_strlen(str);
 	int len;
 	char* _;
 	
@@ -296,15 +405,15 @@ static char* wrap( char* str, char* opt )	{
 	}
 	else	{
 		
-		len = strlen_str+strlen(opt)+strlen("[reset]")+2;
+		len = strlen_str+lean_strlen(opt)+lean_strlen("[reset]")+2;
 		_ = (char*)malloc( len+1 );
 		_[0] = 0;
 
-		strcat( _, "[" );
-		strcat( _, opt );
-		strcat( _, "]" );
-		strcat( _, str );
-		strcat( _, "[reset]" );
+		lean_strcat( _, "[" );
+		lean_strcat( _, opt );
+		lean_strcat( _, "]" );
+		lean_strcat( _, str );
+		lean_strcat( _, "[reset]" );
 
 	}
 

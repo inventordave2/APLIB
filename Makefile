@@ -14,13 +14,17 @@ appname=app
 
 .PHONY: curl_module
 
-all: aplib lean_string trig ieee754 native curl_module.o tests app_front
+all: aplib lean_string trig ieee754 native curl_module.o tests app_front colour
 
 debug_it:
 	gdb ./$(appname).exe
 
 tests: ./tests.c ./tests.h
 	$(COMPILE) $(NOEXE) $(EXPECT_STDLIB) -o ./tests.o ./tests.c
+
+colour: ./colour.c ./colour.h
+	$(COMPILE) $(NOEXE) $(NO_STDLIB) -o ./colour.o ./colour.c
+
 
 aplib: ./aplib.c ./aplib.h ./aplib_constants.h ./lean_string.h 
 	$(COMPILE) $(NOEXE) $(EXPECT_STDLIB) -o ./aplib.o ./aplib.c
