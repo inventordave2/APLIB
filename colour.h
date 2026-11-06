@@ -11,5 +11,7 @@ typedef struct colour_t	{
 
 } colour_t;
 
+struct colour_t* get_colour_api();
+
 #endif
 
