@@ -95,7 +95,7 @@ static char* getcolourcode_bg( char* cn );
 
 static char* bg( char* cn )	{
 
-	if( cn != (char*0) )
+	if( cn != (char*)0 )
 		bg_selection = getcolourcode_bg( cn );
 
 	return bg_selection;
@@ -196,7 +196,7 @@ struct colour_t* get_colour_api()	{
 	modes_codes[ fmt_filename ] = FG_YELLOW;
 	modes_codes[ fmt_dirpath ] = FG_YELLOW;
 
-	return (struct colour_t*) colour_api;
+	return (struct colour_t*) &colour_api;
 }
 
 
