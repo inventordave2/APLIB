@@ -1,7 +1,7 @@
 
-
 double generate_half_pi();
 double sine( double x );
+double arcsine( double _sine );
 double cosine( double x );
 double tangent( double x );
 double quickexp( double b, int r );
@@ -119,6 +119,27 @@ double generate_half_pi(void)   {
         num_radians += A;
     }
     
+    return num_radians;
+}
+
+double arcsine( double _sine )    {
+
+    double x = 1.0;
+    double y = 0.0;
+    double A = 0.00000001;
+    double num_radians = 0.0;
+
+    while( x > _sine )    {
+
+        double new_y = y + (x * A);
+        double new_x = x - (new_y * A);
+
+        y = new_y;
+        x = new_x;
+
+        num_radians += A;
+    }
+
     return num_radians;
 }
 
