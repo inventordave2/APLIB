@@ -37,7 +37,10 @@ void trig_fnc_tests( double angle_in_radians )	{
         printf( "Stdlib atan(t) generates %.20f from tangent %.20f, for angle %.20f.\n", atan(tan(angle_in_radians)), tan(angle_in_radians), angle_in_radians );
 		printf( "Davelib atan_dave(t) generates %.20f, which should match %.20f.\n", atan_dave( tan(angle_in_radians) ), angle_in_radians );
 
-		exit(0);
+        printf( "Stdlib arcsin(t) generates %.20f from sine %.20f, for angle %.20f.\n", asin(sin(angle_in_radians)), sin(angle_in_radians), angle_in_radians );
+        printf( "Davelib arcsine(t) generates %.20f, which should match %.20f.\n", arcsine( sin(angle_in_radians) ), angle_in_radians );
+		
+        exit(0);
 }
 
 

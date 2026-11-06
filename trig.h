@@ -47,6 +47,8 @@ extern double rad_to_deg(double radians, double half_pi);
 extern double sine( double x, int terms );
 extern double cosine( double x, int terms );
 
+extern double arcsine( double _sine );
+
 extern double tangent( double sine_, double cos_ );
 extern double tangent_alt( double angle_in_radians, int precision );
 

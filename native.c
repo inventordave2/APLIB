@@ -227,7 +227,7 @@ int EQ( double A, double B, double epsilon )	{
 // The above is a normative paper on sine approximation using Taylor series.
 
 
-double quickexp( double base, int radix )   {
+static double quickexp( double base, int radix )   {
     
     double result = base;
     

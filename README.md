@@ -64,6 +64,52 @@ AP V = *Result;
 | aplib->reciprocal( V, B, R, flags ) | V -> (1/V) -> R |
 | aplib->sine( V, R, flags ) | V: angle in radians, R: sine(V) in radians   |
 
+## HTTP And WebSocket Module
+
+`curl_module.c` wraps libcurl for authenticated HTTP(S) requests, including
+REST and SOAP APIs, and WebSocket connections over `ws://` or `wss://`. It
+requires libcurl 8.0 or newer with WebSocket support, plus its development
+headers. Build the module with `make curl_module`; the app link includes it.
+The Makefile reads optional libcurl flags from `pkg-config` and falls back to
+`-lcurl`.
+
+```c
+#include "curl_module.h"
+#include <string.h>
+
+aplib_curl_session *session = NULL;
+aplib_curl_response response = { 0 };
+const char *headers[] = {
+	"Content-Type: application/json",
+	"Accept: application/json"
+};
+aplib_curl_request_options request = { 0 };
+
+aplib_curl_init();
+aplib_curl_session_create(&session);
+request.url = "https://example.com/api/login";
+request.method = "POST";
+request.headers = headers;
+request.header_count = 2;
+request.body = "{\"user\":\"name\",\"password\":\"secret\"}";
+request.body_size = strlen(request.body);
+request.follow_redirects = 1;
+if (aplib_curl_request(session, &request, &response) == CURLE_OK) {
+	/* Inspect response.status_code, response.headers, and response.body. */
+}
+aplib_curl_response_free(&response);
+aplib_curl_session_destroy(session);
+aplib_curl_cleanup();
+```
+
+Sessions retain cookies between requests; set a cookie jar with
+`aplib_curl_session_set_cookie_jar`. Pass the same session to
+`aplib_curl_websocket_open` to reuse its cookies for a WebSocket handshake. TLS
+certificate and hostname verification stay enabled. WebSocket receives may
+return `CURLE_AGAIN`; use `aplib_curl_websocket_wait_readable` before retrying.
+Sessions and their handles are not thread-safe; use separate sessions per
+thread.
+
 ## Finding The Source Code
 [Github]: https://github.com/
 The Github repo can be found at: [github.com/inventordave2](https://github.com/inventordave2/RB)

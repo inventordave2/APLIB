@@ -23,7 +23,7 @@ double Root_NewtonsMethod( double a );
 double quick_trig( double angle_in_radians, int max_taylor_exponent );
 
 
-double quickexp( double base, int radix );
+//double quickexp( double base, int radix );
 int factorial( int n );
 
 #define APNATIVERANGE signed long long

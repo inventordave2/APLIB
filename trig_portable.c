@@ -1,4 +1,5 @@
 
+#ifndef DAVELIB_TRIG_H
 double generate_half_pi();
 double sine( double x );
 double arcsine( double _sine );
@@ -9,6 +10,7 @@ double root2( double a );
 double atan_dave( double t );
 double deg_to_rad( double deg );
 double rad_to_deg( double radians );
+#endif
 
 double tangent( double x )    {
 
@@ -32,9 +34,10 @@ double quickexp( double base, int radix )  {
 double atan_dave( double t )    {
 
     if( t > 1.0 )    {  return (generate_half_pi() - atan_dave( 1.0/t )); }
-    if( t < 0.0 )    { t = 0.0 - x; return (0.0 - atan_dave( t )); }
+    if( t < 0.0 )    { t = 0.0 - t; return (0.0 - atan_dave( t )); }
 
 
+    int tan_ = t;
     int n = 1;
     int high_order = 48;
     int signed sign = -1;
@@ -129,7 +132,7 @@ double arcsine( double _sine )    {
     double A = 0.00000001;
     double num_radians = 0.0;
 
-    while( x > _sine )    {
+    while( y < _sine )    {
 
         double new_y = y + (x * A);
         double new_x = x - (new_y * A);

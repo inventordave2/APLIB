@@ -17,6 +17,15 @@
 static void init_lean_string();
 static unsigned char lean_tray_initialised = 0;
 
+static void lean_memcpy( void* dest, char octet, int n );
+
+static void lean_memcpy( void* dest, char octet, int n )  {
+
+    unsigned char* d = (unsigned char*) dest;
+    for( int i = 0; i < n; ++i )
+        d[i] = (unsigned char) octet;
+}
+
 static char* lean_strdup( char* s2 );
 static void lean_strcat( char*, char* );
 static void lean_strcpy( char* to, char* from );

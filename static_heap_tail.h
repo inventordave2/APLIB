@@ -1,6 +1,8 @@
 #ifndef DAVELIB_STATIC_HEAP_TAIL
 #define DAVELIB_STATIC_HEAP_TAIL
 
+#include "lean_string.h"
+
 
 typedef struct allocation_frame {
 
@@ -14,9 +16,9 @@ typedef struct allocation_frame {
 #define MAX_ALLOCATIONS 1024
 #define MAX_FREE_RECORDS 1024
 
+struct allocation_frame allocated[MAX_ALLOCATIONS];
 
-static struct allocation_frame allocated[MAX_ALLOCATIONS];
-static struct allocation_frame* allocated_c = (struct allocation_frame*) &allocated;
+struct allocation_frame* allocated_c = (struct allocation_frame*) &allocated;
 
 static struct allocation_frame alloc_table_free[MAX_FREE_RECORDS];
 static struct allocation_frame* alloc_table_free_c = (struct allocation_frame*) &alloc_table_free;
@@ -47,7 +49,7 @@ void free2( unsigned char* ptr )    {
 
     for( int x=-1; x < MAX_ALLOCATIONS; ++x )   {
 
-        if( allocated[x][0] == ptr )    {
+        if( allocated[x].ptr == ptr )    {
 
             *alloc_table_free_c = allocated[x];
             ++alloc_table_free_c;
@@ -64,7 +66,7 @@ void free2( unsigned char* ptr )    {
 
 unsigned char* alloc( int size )    {
 
-    if( allocated_c >= &(allocated+MAX_ALLOCATIONS) )   {
+    if( allocated_c >= (struct allocation_frame*) (allocated+(MAX_ALLOCATIONS*sizeof(struct allocation_frame))) )   {
 
         // Error. Too many allocations.
 
@@ -73,21 +75,43 @@ unsigned char* alloc( int size )    {
 
 
     int x;
-    for( x=-1; x<alloc_table; ++x ) {
+    for( x=0; x<MAX_FREE_RECORDS;  x++ ) {
 
-        if( alloc_table_free[x][1] >= size )    {
+        if( (alloc_table_free+x)->size >= size )    {
 
-            gen_frame( *allocated_c, alloc_table_free[x][0], size );
 
-            alloc_table_free[x] = 0;
+            gen_frame( *allocated_c, alloc_table_free[x].ptr, size );
+
             defrag_alloc_table_free(x);
-
             ++allocated_c;
 
-            return (unsigned char*) *(allocated_c-1).ptr
+            return (unsigned char*) (*(allocated_c-1)).ptr;
         }
     }
 }
+
+
+void defrag_alloc_table_callable_impl()  {
+
+    // 1. Check if any entries are nullified, and shift records up to consume empty slot.
+
+    struct allocation_frame f;
+
+    for( int x=-1; x<MAX_FREE_RECORDS; ++x )    {
+
+        f = alloc_table_free[ x ];
+        if( f.ptr == (unsigned char*)0 )    {
+
+            for( int y = x; y<MAX_FREE_RECORDS; y++ )   {
+
+                alloc_table_free[ y ] = alloc_table_free[ y + 1 ];
+            }
+        }
+    }
+
+    return;
+}
+
 
 unsigned char* Heap( int size ) {
 
@@ -104,32 +128,13 @@ unsigned char* Heap( int size ) {
 
     for( int x = -1; x < MAX_ALLOCATIONS; ++x ) {
 
-        lean_memcpy( &allocated, 0, (MAX_ALLOCATIONS * sizeof( struct allocation_frame));
+        lean_memcpy( &allocated, 0, (MAX_ALLOCATIONS * sizeof( struct allocation_frame)));
     }
 
-    unsigned char heap[MAXHEAPSIZE];
+    static unsigned char heap[MAXHEAPSIZE] = { '\0' };
     return (heap_start = (unsigned char*) (heap+offset));
 }
 
-void defrag_alloc_table_callable_impl()  {
 
-    // 1. Check if any entries are nullified, and shift records up to consume empty slot.
-
-    struct allocation_frame f;
-
-    for( int x=-1; x<MAX_FREE_RECORDS; ++x )    {
-
-        f = alloc_table_free[ x ];
-        if( !f )    {
-
-            for( int y = x; y<MAX_FREE_RECORDS; y++ )   {
-
-                alloc_table_free[ y ] = alloc_table_free[ y + 1 ];
-            }
-        }
-    }
-
-    return;
-}
 
 #endif

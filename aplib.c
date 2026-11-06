@@ -1753,7 +1753,7 @@ AP AP2_7;
 AP AP22_7;
 AP AP_PI;
 
-#ifndef EXPECT_CSTDLIB
+#ifndef EXPECT_STDLIB
 #include "./static_heap_tail.h"
-HEAP_PTR_TYPE heap = Heap( 4096 );
 #endif
+
